@@ -93,8 +93,7 @@ public class ConfProcess implements Runnable {
             int totalMinimized = total / incomingBackup.size();
             byte totalHi = getHiPart(totalMinimized);
             byte totalLo = getLoPart(totalMinimized);
-            building.commonChannel.put(i + 1, totalHi);
-            building.commonChannel.put(i, totalLo);
+            putBytes(building.commonChannel, i, totalHi, totalLo);
 
             for (Map.Entry<Integer, ByteBuffer> entry : incomingBackup.entrySet()) {
                 final byte hiPart;
@@ -110,10 +109,14 @@ public class ConfProcess implements Runnable {
                     hiPart = totalHi;
                     loPart = totalLo;
                 }
-                building.audioChannels.get(entry.getKey()).put(i + 1, hiPart);
-                building.audioChannels.get(entry.getKey()).put(i, loPart);
+                putBytes(building.audioChannels.get(entry.getKey()), i, hiPart, loPart);
             }
         }
+    }
+
+    private void putBytes(ByteBuffer byteBuffer, int i, byte hiPart, byte loPart) {
+        byteBuffer.put(i + 1, hiPart);
+        byteBuffer.put(i, loPart);
     }
 
     private boolean checkLength(Map<Integer, Integer> lengthsMap, int i, Map.Entry<Integer, ByteBuffer> entry) {
