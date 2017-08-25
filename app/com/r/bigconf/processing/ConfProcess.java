@@ -25,63 +25,93 @@ public class ConfProcess implements Runnable {
     public void run() {
         while (isActive) {
             if (System.currentTimeMillis() % conference.getRecordInterval() == 0) {
-                Map<Integer, ByteBuffer> incomingBackup = new HashMap<>(incoming);
-                incoming.clear();
-                buildBuffers(incomingBackup);
-                ConferenceChannelsData activeBackup = active;
-                active = building;
-                building = activeBackup;
-                building.audioChannels.clear();
-                building.commonChannel = null;
+                processInterval();
             }
         }
 
     }
 
+    public void processInterval() {
+        Map<Integer, ByteBuffer> incomingBackup = new HashMap<>(incoming);
+        incoming.clear();
+        buildBuffers(incomingBackup);
+        ConferenceChannelsData activeBackup = active;
+        active = building;
+        building = activeBackup;
+        building.audioChannels.clear();
+        building.commonChannel = null;
+    }
+
+    public void addIncoming(Integer userId, ByteBuffer byteBuffer) {
+        incoming.put(userId, byteBuffer);
+    }
+
+    public ByteBuffer getForUser(int userId) {
+        if (active != null) {
+            ByteBuffer special = active.audioChannels.get(userId);
+            return special != null ? special : active.commonChannel;
+        } else {
+            return null;
+        }
+    }
+
     private void buildBuffers(Map<Integer, ByteBuffer> incomingBackup) {
         final Map<Integer, Integer> lengthsMap = new HashMap<>();
         int maxLength = 0;
-        building.commonChannel = ByteBuffer.allocate(maxLength);
         for (Map.Entry<Integer, ByteBuffer> entry : incomingBackup.entrySet()) {
             int dataLength = WavUtils.getDataLength(entry.getValue());
             if (dataLength > maxLength) {
                 maxLength = dataLength;
             }
             lengthsMap.put(entry.getKey(), dataLength);
-            building.audioChannels.put(entry.getKey(), ByteBuffer.allocate(maxLength));
         }
         int dataStartIndex = 44;
-        for (int i = dataStartIndex; i < maxLength + dataStartIndex; i = i + 2) {
+        int buffersSize = maxLength + dataStartIndex;
+        building.commonChannel = ByteBuffer.allocate(buffersSize);
+        for (Integer id : incomingBackup.keySet()) {
+            building.audioChannels.put(id, ByteBuffer.allocate(buffersSize));
+        }
+        //copy headers
+        ByteBuffer value = incomingBackup.entrySet().iterator().next().getValue();
+        value.position(0);
+        for (int i = 0; i < dataStartIndex; i++) {
+            byte headerByte = value.get(i);
+            building.commonChannel.put(i, headerByte);
+            for (ByteBuffer buffer : building.audioChannels.values()) {
+                buffer.put(i, headerByte);
+            }
+        }
+        for (int i = dataStartIndex; i < buffersSize; i = i + 2) {
             int total = 0;
             for (Map.Entry<Integer, ByteBuffer> entry : incomingBackup.entrySet()) {
                 if (checkLength(lengthsMap, i, entry)) {
-                    byte hi = entry.getValue().get(i);
-                    byte lo = entry.getValue().get(i + 1);
+                    byte hi = entry.getValue().get(i + 1);
+                    byte lo = entry.getValue().get(i);
                     total = total + getaShort(hi, lo);
                 }
             }
             int totalMinimized = total / incomingBackup.size();
             byte totalHi = getHiPart(totalMinimized);
             byte totalLo = getLoPart(totalMinimized);
-            building.commonChannel.put(i, totalHi);
-            building.commonChannel.put(i + 1, totalLo);
+            building.commonChannel.put(i + 1, totalHi);
+            building.commonChannel.put(i, totalLo);
 
             for (Map.Entry<Integer, ByteBuffer> entry : incomingBackup.entrySet()) {
                 final byte hiPart;
                 final byte loPart;
-                if(checkLength(lengthsMap,i,entry)){
-                    byte hi = entry.getValue().get(i);
-                    byte lo = entry.getValue().get(i + 1);
+                if (checkLength(lengthsMap, i, entry)) {
+                    byte hi = entry.getValue().get(i + 1);
+                    byte lo = entry.getValue().get(i);
                     int specific = total - getaShort(hi, lo);
-                    int specificMinimized = specific/ incomingBackup.size() - 1;
+                    int specificMinimized = specific / incomingBackup.size() - 1;
                     hiPart = getHiPart(specificMinimized);
                     loPart = getLoPart(specificMinimized);
                 } else {
                     hiPart = totalHi;
-                    loPart= totalLo;
+                    loPart = totalLo;
                 }
-                building.audioChannels.get(entry.getKey()).put(i, hiPart);
-                building.audioChannels.get(entry.getKey()).put(i + 1, loPart);
+                building.audioChannels.get(entry.getKey()).put(i + 1, hiPart);
+                building.audioChannels.get(entry.getKey()).put(i, loPart);
             }
         }
     }
@@ -100,15 +130,6 @@ public class ConfProcess implements Runnable {
 
     private byte getHiPart(int total) {
         return (byte) ((total & 0xFF00) >> 8);
-    }
-
-    public ByteBuffer getForUser(int userId) {
-        if (active != null) {
-            ByteBuffer special = active.audioChannels.get(userId);
-            return special != null ? special : active.commonChannel;
-        } else {
-            return null;
-        }
     }
 
     private static class ConferenceChannelsData {

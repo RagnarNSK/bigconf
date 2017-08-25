@@ -8,7 +8,8 @@ public class WavUtils {
 
     public static int getDataLength(ByteBuffer byteBuffer){
         byte[] length = new byte[4];
-        byteBuffer.get(length,40, 4);
+        byteBuffer.position(40);
+        byteBuffer.get(length,0, 4);
         ByteBuffer bb = ByteBuffer.wrap(length);
         bb.order(ByteOrder.LITTLE_ENDIAN);
         return bb.getInt();
