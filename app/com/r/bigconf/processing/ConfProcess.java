@@ -11,6 +11,7 @@ public class ConfProcess implements Runnable {
 
     private final Conference conference;
     public boolean isActive;
+    public boolean minimizeTotalChannel = false;
 
     private ConferenceChannelsData active = new ConferenceChannelsData();
     private ConferenceChannelsData building = new ConferenceChannelsData();
@@ -90,7 +91,7 @@ public class ConfProcess implements Runnable {
                     total = total + getaShort(hi, lo);
                 }
             }
-            int totalMinimized = total / incomingBackup.size();
+            int totalMinimized = minimizeTotalChannel ? total / incomingBackup.size() : total;
             byte totalHi = getHiPart(totalMinimized);
             byte totalLo = getLoPart(totalMinimized);
             putBytes(building.commonChannel, i, totalHi, totalLo);
@@ -102,7 +103,7 @@ public class ConfProcess implements Runnable {
                     byte hi = entry.getValue().get(i + 1);
                     byte lo = entry.getValue().get(i);
                     int specific = total - getaShort(hi, lo);
-                    int specificMinimized = specific / incomingBackup.size() - 1;
+                    int specificMinimized = minimizeTotalChannel ? specific / incomingBackup.size() - 1 : specific;
                     hiPart = getHiPart(specificMinimized);
                     loPart = getLoPart(specificMinimized);
                 } else {
