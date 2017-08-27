@@ -2,6 +2,8 @@ package com.r.bigconf.processing;
 
 import com.r.bigconf.model.Conference;
 import com.r.bigconf.sound.wav.WavUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -9,6 +11,7 @@ import java.util.Map;
 
 public class ConfProcess implements Runnable {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConfProcess.class);
     private final Conference conference;
     public boolean isActive;
     public boolean minimizeTotalChannel = false;
@@ -18,19 +21,27 @@ public class ConfProcess implements Runnable {
 
     private Map<Integer, ByteBuffer> incoming = new HashMap<>();
 
+    private long currentTime;
+
     public ConfProcess(Conference conference) {
         this.conference = conference;
+        currentTime = System.currentTimeMillis();
     }
 
     @Override
     public void run() {
         while (isActive) {
-            if (System.currentTimeMillis() % conference.getRecordInterval() == 0) {
-                processInterval();
+            processInterval();
+            currentTime += conference.getRecordInterval();
+            try {
+                Thread.sleep(currentTime - System.currentTimeMillis());
+            } catch (InterruptedException e) {
+                LOGGER.warn("Conf interrupted");
+                isActive = false;
             }
         }
-
     }
+
 
     public void processInterval() {
         Map<Integer, ByteBuffer> incomingBackup = new HashMap<>(incoming);
@@ -57,6 +68,9 @@ public class ConfProcess implements Runnable {
     }
 
     private void buildBuffers(Map<Integer, ByteBuffer> incomingBackup) {
+        if (incomingBackup.size() == 0) {
+            return;
+        }
         final Map<Integer, Integer> lengthsMap = new HashMap<>();
         int maxLength = 0;
         for (Map.Entry<Integer, ByteBuffer> entry : incomingBackup.entrySet()) {

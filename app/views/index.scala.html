@@ -1,4 +1,4 @@
-@()
+@(recordInterval: Integer)
 
 @main("Welcome to Play") {
     <h1>Welcome to Play!</h1>
@@ -14,7 +14,7 @@
 
     <script src="https://cdn.webrtc-experiment.com/MediaStreamRecorder.js"> </script>
     <script>
-            var interval = 2000;
+            var interval = @recordInterval;
 
             var mediaConstraints = {
                 audio: true
