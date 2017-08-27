@@ -11,6 +11,8 @@ import java.util.Map;
 
 public class ConfProcess implements Runnable {
 
+    private static final int DUMMY_FILTER_THRESHOLD = 100;
+
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfProcess.class);
     private final Conference conference;
     public boolean isActive;
@@ -55,7 +57,7 @@ public class ConfProcess implements Runnable {
     }
 
     public void addIncoming(Integer userId, ByteBuffer byteBuffer) {
-        incoming.put(userId, byteBuffer);
+        incoming.put(userId, dummyFilter(byteBuffer));
     }
 
     public ByteBuffer getForUser(int userId) {
@@ -148,6 +150,28 @@ public class ConfProcess implements Runnable {
 
     private byte getHiPart(int total) {
         return (byte) ((total & 0xFF00) >> 8);
+    }
+
+
+    public ByteBuffer dummyFilter(ByteBuffer byteBuffer) {
+        int length = byteBuffer.limit();
+        ByteBuffer ret = ByteBuffer.allocate(length);
+        for(int i = 0; i< length; i=i+2){
+            if(i > 44){
+                byte lo = byteBuffer.get(i);
+                byte hi = byteBuffer.get(i+1);
+                short value = getaShort(hi, lo);
+                if(value < DUMMY_FILTER_THRESHOLD && value > (DUMMY_FILTER_THRESHOLD * -1)){
+                    value = 0;
+                }
+                ret.put(i, getLoPart(value));
+                ret.put(i+1, getHiPart(value));
+            } else {
+                ret.put(i,byteBuffer.get(i));
+                ret.put(i+1,byteBuffer.get(i+1));
+            }
+        }
+        return ret;
     }
 
     private static class ConferenceChannelsData {
