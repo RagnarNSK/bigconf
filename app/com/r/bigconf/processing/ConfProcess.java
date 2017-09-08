@@ -1,5 +1,6 @@
 package com.r.bigconf.processing;
 
+import com.r.bigconf.filter.Filter;
 import com.r.bigconf.model.Conference;
 import com.r.bigconf.sound.wav.WavUtils;
 import org.slf4j.Logger;
@@ -11,14 +12,12 @@ import java.util.Map;
 
 public class ConfProcess implements Runnable {
 
-    private static final int DUMMY_FILTER_THRESHOLD = 100;
-
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfProcess.class);
     private final Conference conference;
-    public boolean isActive;
+    public boolean isActive = true;
     public boolean minimizeTotalChannel = false;
 
-    private ConferenceChannelsData active = new ConferenceChannelsData();
+    private volatile ConferenceChannelsData active = new ConferenceChannelsData();
     private ConferenceChannelsData building = new ConferenceChannelsData();
 
     private Map<Integer, ByteBuffer> incoming = new HashMap<>();
@@ -56,8 +55,8 @@ public class ConfProcess implements Runnable {
         building.commonChannel = null;
     }
 
-    public void addIncoming(Integer userId, ByteBuffer byteBuffer) {
-        incoming.put(userId, dummyFilter(byteBuffer));
+    public void addIncoming(Integer userId, ByteBuffer byteBuffer, Filter filter) {
+        incoming.put(userId, filter != null ? filter.filter(byteBuffer) : byteBuffer);
     }
 
     public ByteBuffer getForUser(int userId) {
@@ -104,13 +103,13 @@ public class ConfProcess implements Runnable {
                 if (checkLength(lengthsMap, i, entry)) {
                     byte hi = entry.getValue().get(i + 1);
                     byte lo = entry.getValue().get(i);
-                    total = total + getaShort(hi, lo);
+                    total = total + WavUtils.getaShort(hi, lo);
                 }
             }
             int totalMinimized = minimizeTotalChannel ? total / incomingBackup.size() : total;
-            byte totalHi = getHiPart(totalMinimized);
-            byte totalLo = getLoPart(totalMinimized);
-            putBytes(building.commonChannel, i, totalHi, totalLo);
+            byte totalHi = WavUtils.getHiPart(totalMinimized);
+            byte totalLo = WavUtils.getLoPart(totalMinimized);
+            WavUtils.putBytes(building.commonChannel, i, totalHi, totalLo);
 
             for (Map.Entry<Integer, ByteBuffer> entry : incomingBackup.entrySet()) {
                 final byte hiPart;
@@ -118,60 +117,22 @@ public class ConfProcess implements Runnable {
                 if (checkLength(lengthsMap, i, entry)) {
                     byte hi = entry.getValue().get(i + 1);
                     byte lo = entry.getValue().get(i);
-                    int specific = total - getaShort(hi, lo);
+                    int specific = total - WavUtils.getaShort(hi, lo);
                     int specificMinimized = minimizeTotalChannel ? specific / incomingBackup.size() - 1 : specific;
-                    hiPart = getHiPart(specificMinimized);
-                    loPart = getLoPart(specificMinimized);
+                    hiPart = WavUtils.getHiPart(specificMinimized);
+                    loPart = WavUtils.getLoPart(specificMinimized);
                 } else {
                     hiPart = totalHi;
                     loPart = totalLo;
                 }
-                putBytes(building.audioChannels.get(entry.getKey()), i, hiPart, loPart);
+                WavUtils.putBytes(building.audioChannels.get(entry.getKey()), i, hiPart, loPart);
             }
         }
-    }
-
-    private void putBytes(ByteBuffer byteBuffer, int i, byte hiPart, byte loPart) {
-        byteBuffer.put(i + 1, hiPart);
-        byteBuffer.put(i, loPart);
+        //building.compressedCommonChannel = codec.compress(building.commonChannel);
     }
 
     private boolean checkLength(Map<Integer, Integer> lengthsMap, int i, Map.Entry<Integer, ByteBuffer> entry) {
         return i + 1 < lengthsMap.get(entry.getKey()) + 44;
-    }
-
-    private short getaShort(byte hi, byte lo) {
-        return (short) (((hi & 0xFF) << 8) | (lo & 0xFF));
-    }
-
-    private byte getLoPart(int total) {
-        return (byte) (total & 0xFF00);
-    }
-
-    private byte getHiPart(int total) {
-        return (byte) ((total & 0xFF00) >> 8);
-    }
-
-
-    public ByteBuffer dummyFilter(ByteBuffer byteBuffer) {
-        int length = byteBuffer.limit();
-        ByteBuffer ret = ByteBuffer.allocate(length);
-        for(int i = 0; i< length; i=i+2){
-            if(i > 44){
-                byte lo = byteBuffer.get(i);
-                byte hi = byteBuffer.get(i+1);
-                short value = getaShort(hi, lo);
-                if(value < DUMMY_FILTER_THRESHOLD && value > (DUMMY_FILTER_THRESHOLD * -1)){
-                    value = 0;
-                }
-                ret.put(i, getLoPart(value));
-                ret.put(i+1, getHiPart(value));
-            } else {
-                ret.put(i,byteBuffer.get(i));
-                ret.put(i+1,byteBuffer.get(i+1));
-            }
-        }
-        return ret;
     }
 
     private static class ConferenceChannelsData {

@@ -2,6 +2,7 @@ package controllers;
 
 import akka.util.ByteString;
 import com.fasterxml.jackson.databind.util.ByteBufferBackedInputStream;
+import com.r.bigconf.filter.DummyWavFilter;
 import com.r.bigconf.model.Conference;
 import com.r.bigconf.processing.ConfProcess;
 import org.slf4j.Logger;
@@ -24,6 +25,7 @@ public class HomeController extends Controller {
 
     public static final String USER_ID_KEY = "userId";
     private static final Logger LOGGER = LoggerFactory.getLogger(HomeController.class);
+    public static final DummyWavFilter FILTER = new DummyWavFilter();
 
     //private ByteBuffer bytes;
 
@@ -62,7 +64,7 @@ public class HomeController extends Controller {
         ByteString byteString = request().body().asRaw().asBytes();
         if (byteString != null) {
             int userId = getUserId();
-            testConfProcess.addIncoming(userId, byteString.asByteBuffer());
+            testConfProcess.addIncoming(userId, byteString.asByteBuffer(), FILTER);
             return ok("File uploaded");
         } else {
             flash("error", "Missing file");

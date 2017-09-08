@@ -61,4 +61,21 @@ public class WavUtils {
         bb.order(ByteOrder.LITTLE_ENDIAN);
         return bb.getInt();
     }
+
+    public static void putBytes(ByteBuffer byteBuffer, int i, byte hiPart, byte loPart) {
+        byteBuffer.put(i + 1, hiPart);
+        byteBuffer.put(i, loPart);
+    }
+
+    public static short getaShort(byte hi, byte lo) {
+        return (short) (((hi & 0xFF) << 8) | (lo & 0xFF));
+    }
+
+    public static byte getLoPart(int total) {
+        return (byte) (total & 0xFF00);
+    }
+
+    public static byte getHiPart(int total) {
+        return (byte) ((total & 0xFF00) >> 8);
+    }
 }
