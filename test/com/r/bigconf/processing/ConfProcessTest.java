@@ -1,5 +1,6 @@
 package com.r.bigconf.processing;
 
+import com.r.bigconf.filter.DummyWavFilter;
 import com.r.bigconf.model.Conference;
 import org.junit.Test;
 
@@ -11,6 +12,9 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 
 public class ConfProcessTest {
+
+    public static final DummyWavFilter FILTER = new DummyWavFilter();
+
     @Test
     public void run() throws Exception {
         ConfProcess confProcess = new ConfProcess(new Conference(1000));
@@ -28,7 +32,7 @@ public class ConfProcessTest {
     private void addIncoming(ConfProcess confProcess, String path, int userId) throws IOException {
         FileChannel fileChannel = FileChannel.open(Paths.get(path));
         MappedByteBuffer byteBuffer = fileChannel.map(FileChannel.MapMode.READ_ONLY, 0, fileChannel.size());
-        confProcess.addIncoming(userId,byteBuffer);
+        confProcess.addIncoming(userId,byteBuffer, FILTER);
     }
 
 }
