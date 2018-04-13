@@ -5,8 +5,9 @@ import com.fasterxml.jackson.databind.util.ByteBufferBackedInputStream;
 import com.r.bigconf.filter.DummyWavFilter;
 import com.r.bigconf.model.Conference;
 import com.r.bigconf.processing.ConfProcess;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.ignite.Ignite;
+import org.apache.ignite.Ignition;
 import play.inject.ApplicationLifecycle;
 import play.mvc.*;
 
@@ -21,36 +22,35 @@ import java.util.concurrent.CompletableFuture;
  * This controller contains an action to handle HTTP requests
  * to the application's home page.
  */
+@Slf4j
 public class HomeController extends Controller {
 
     public static final String USER_ID_KEY = "userId";
-    private static final Logger LOGGER = LoggerFactory.getLogger(HomeController.class);
     public static final DummyWavFilter FILTER = new DummyWavFilter();
-
-    //private ByteBuffer bytes;
 
     private Conference testConference = new Conference(1000);
     private ConfProcess testConfProcess = new ConfProcess(testConference);
 
     @Inject
     public HomeController(ApplicationLifecycle lifecycle) {
+        Ignite ignite = Ignition.start();
+        log.info("Ignite {} started", ignite.name());
+
         testConfProcess.isActive = true;
         final Thread confProcessThread = new Thread(testConfProcess);
         confProcessThread.start();
         lifecycle.addStopHook(() -> {
+            log.info("Clearing app data");
+            ignite.close();
             testConfProcess.isActive = false;
             confProcessThread.interrupt();
+            log.info("shutdown executing");
             return CompletableFuture.completedFuture(null);
         });
     }
-    /**
-     * An action that renders an HTML page with a welcome message.
-     * The configuration in the <code>routes</code> file means that
-     * this method will be called when the application receives a
-     * <code>GET</code> request with a path of <code>/</code>.
-     */
+
     public Result index() {
-        if(!session().containsKey(USER_ID_KEY)){
+        if (!session().containsKey(USER_ID_KEY)) {
             try {
                 session().put(USER_ID_KEY, Integer.toString(SecureRandom.getInstance("SHA1PRNG").nextInt()));
             } catch (NoSuchAlgorithmException e) {
@@ -83,7 +83,7 @@ public class HomeController extends Controller {
 
     private int getUserId() {
         String idString = session().get(USER_ID_KEY);
-        if(idString != null){
+        if (idString != null) {
             return Integer.parseInt(idString);
         } else {
             throw new IllegalStateException("unauthorized");

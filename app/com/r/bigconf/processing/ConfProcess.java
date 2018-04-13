@@ -3,6 +3,7 @@ package com.r.bigconf.processing;
 import com.r.bigconf.filter.Filter;
 import com.r.bigconf.model.Conference;
 import com.r.bigconf.sound.wav.WavUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,9 +11,9 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 public class ConfProcess implements Runnable {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConfProcess.class);
     private final Conference conference;
     public boolean isActive = true;
     public boolean minimizeTotalChannel = false;
@@ -37,7 +38,7 @@ public class ConfProcess implements Runnable {
             try {
                 Thread.sleep(currentTime - System.currentTimeMillis());
             } catch (InterruptedException e) {
-                LOGGER.warn("Conf interrupted");
+                log.warn("Conf interrupted");
                 isActive = false;
             }
         }
