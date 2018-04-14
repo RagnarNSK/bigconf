@@ -7,6 +7,8 @@ import java.util.UUID;
 
 public interface ConferenceManager {
 
+    Conference getConference(UUID conferenceId);
+
     Conference startConference(User user);
 
     Conference joinToConference(UUID conferenceId, User user);

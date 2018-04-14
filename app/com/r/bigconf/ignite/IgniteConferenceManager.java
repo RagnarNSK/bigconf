@@ -5,6 +5,8 @@ import com.r.bigconf.core.model.Conference;
 import com.r.bigconf.core.model.User;
 import org.apache.ignite.Ignite;
 
+import java.util.UUID;
+
 public class IgniteConferenceManager extends BaseConferenceManager  {
 
     private final Ignite ignite;
@@ -17,8 +19,18 @@ public class IgniteConferenceManager extends BaseConferenceManager  {
     public Conference startConference(User user) {
         Conference conference = createConferenceInstance(user);
         IgniteConferenceProcess confProcess = new IgniteConferenceProcess(conference);
-        getActiveProcesses().add(confProcess);
         ignite.compute().run(confProcess);
         return conference;
+    }
+
+    @Override
+    public void close() {
+        //TODO
+    }
+
+    @Override
+    public Conference getConference(UUID conferenceId) {
+        //TODO
+        return null;
     }
 }

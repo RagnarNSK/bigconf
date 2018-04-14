@@ -16,7 +16,7 @@ public class SingleThreadConferenceProcess extends BaseConferenceProcess impleme
 
     @Override
     public void run() {
-        while (isActive) {
+        while (conference.isActive()) {
             processInterval();
             currentTime += conference.getRecordInterval();
             try {
@@ -26,7 +26,7 @@ public class SingleThreadConferenceProcess extends BaseConferenceProcess impleme
                 }
             } catch (InterruptedException e) {
                 log.warn("Conf interrupted");
-                isActive = false;
+                conference.setActive(false);
             }
         }
     }

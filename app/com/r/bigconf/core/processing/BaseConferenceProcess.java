@@ -10,7 +10,6 @@ import java.util.Map;
 
 public class BaseConferenceProcess {
     protected final Conference conference;
-    public boolean isActive = true;
     public boolean minimizeTotalChannel = false;
     private volatile ConferenceChannelsData active = new ConferenceChannelsData();
     private ConferenceChannelsData building = new ConferenceChannelsData();
