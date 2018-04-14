@@ -4,8 +4,6 @@ import com.r.bigconf.filter.Filter;
 import com.r.bigconf.model.Conference;
 import com.r.bigconf.sound.wav.WavUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -30,13 +28,20 @@ public class ConfProcess implements Runnable {
         currentTime = System.currentTimeMillis();
     }
 
+    public Conference getConference() {
+        return conference;
+    }
+
     @Override
     public void run() {
         while (isActive) {
             processInterval();
             currentTime += conference.getRecordInterval();
             try {
-                Thread.sleep(currentTime - System.currentTimeMillis());
+                long timeToSleep = currentTime - System.currentTimeMillis();
+                if(timeToSleep > 0) {
+                    Thread.sleep(timeToSleep);
+                }
             } catch (InterruptedException e) {
                 log.warn("Conf interrupted");
                 isActive = false;
