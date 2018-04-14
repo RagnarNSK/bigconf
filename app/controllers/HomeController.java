@@ -2,9 +2,11 @@ package controllers;
 
 import akka.util.ByteString;
 import com.fasterxml.jackson.databind.util.ByteBufferBackedInputStream;
-import com.r.bigconf.filter.DummyWavFilter;
-import com.r.bigconf.model.Conference;
-import com.r.bigconf.processing.ConfProcess;
+import com.r.bigconf.core.filter.DummyWavFilter;
+import com.r.bigconf.ignite.IgniteConferenceManager;
+import com.r.bigconf.core.manager.ConferenceManager;
+import com.r.bigconf.core.model.Conference;
+import com.r.bigconf.local.SingleThreadConferenceProcess;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.Ignition;
@@ -29,12 +31,15 @@ public class HomeController extends Controller {
     public static final DummyWavFilter FILTER = new DummyWavFilter();
 
     private Conference testConference = new Conference(1000);
-    private ConfProcess testConfProcess = new ConfProcess(testConference);
+    private SingleThreadConferenceProcess testConfProcess = new SingleThreadConferenceProcess(testConference);
+
+    private final ConferenceManager conferenceManager;
 
     @Inject
     public HomeController(ApplicationLifecycle lifecycle) {
         Ignite ignite = Ignition.start();
         log.info("Ignite {} started", ignite.name());
+        conferenceManager = new IgniteConferenceManager(ignite);
 
         testConfProcess.isActive = true;
         final Thread confProcessThread = new Thread(testConfProcess);
@@ -79,6 +84,11 @@ public class HomeController extends Controller {
         } else {
             return status(204);
         }
+    }
+
+    public Result getConferenceList()  {
+        //TODO
+        return null;
     }
 
     private int getUserId() {

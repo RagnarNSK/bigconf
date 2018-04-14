@@ -1,4 +1,4 @@
-package com.r.bigconf.filter;
+package com.r.bigconf.core.filter;
 
 import java.nio.ByteBuffer;
 

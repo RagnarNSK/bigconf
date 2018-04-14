@@ -1,54 +1,28 @@
-package com.r.bigconf.processing;
+package com.r.bigconf.core.processing;
 
-import com.r.bigconf.filter.Filter;
-import com.r.bigconf.model.Conference;
-import com.r.bigconf.sound.wav.WavUtils;
-import lombok.extern.slf4j.Slf4j;
+import com.r.bigconf.core.filter.Filter;
+import com.r.bigconf.core.model.Conference;
+import com.r.bigconf.core.sound.wav.WavUtils;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
-@Slf4j
-public class ConfProcess implements Runnable {
-
-    private final Conference conference;
+public class BaseConferenceProcess {
+    protected final Conference conference;
     public boolean isActive = true;
     public boolean minimizeTotalChannel = false;
-
     private volatile ConferenceChannelsData active = new ConferenceChannelsData();
     private ConferenceChannelsData building = new ConferenceChannelsData();
-
     private Map<Integer, ByteBuffer> incoming = new HashMap<>();
 
-    private long currentTime;
-
-    public ConfProcess(Conference conference) {
+    public BaseConferenceProcess(Conference conference) {
         this.conference = conference;
-        currentTime = System.currentTimeMillis();
     }
 
     public Conference getConference() {
         return conference;
     }
-
-    @Override
-    public void run() {
-        while (isActive) {
-            processInterval();
-            currentTime += conference.getRecordInterval();
-            try {
-                long timeToSleep = currentTime - System.currentTimeMillis();
-                if(timeToSleep > 0) {
-                    Thread.sleep(timeToSleep);
-                }
-            } catch (InterruptedException e) {
-                log.warn("Conf interrupted");
-                isActive = false;
-            }
-        }
-    }
-
 
     public void processInterval() {
         Map<Integer, ByteBuffer> incomingBackup = new HashMap<>(incoming);

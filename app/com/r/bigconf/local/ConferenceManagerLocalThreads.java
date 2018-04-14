@@ -1,8 +1,10 @@
-package com.r.bigconf.manager;
+package com.r.bigconf.local;
 
-import com.r.bigconf.model.Conference;
-import com.r.bigconf.model.User;
-import com.r.bigconf.processing.ConfProcess;
+import com.r.bigconf.core.manager.BaseConferenceManager;
+import com.r.bigconf.core.manager.ConferenceManager;
+import com.r.bigconf.core.model.Conference;
+import com.r.bigconf.core.model.User;
+
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -17,7 +19,7 @@ public class ConferenceManagerLocalThreads extends BaseConferenceManager impleme
     @Override
     public Conference startConference(User user) {
         Conference conference = createConferenceInstance(user);
-        ConfProcess process = new ConfProcess(conference);
+        SingleThreadConferenceProcess process = new SingleThreadConferenceProcess(conference);
         getActiveProcesses().add(process);
         threadPoolExecutor.execute(process);
         return conference;

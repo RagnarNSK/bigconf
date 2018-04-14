@@ -1,8 +1,8 @@
-package com.r.bigconf.manager;
+package com.r.bigconf.core.manager;
 
-import com.r.bigconf.model.Conference;
-import com.r.bigconf.model.User;
-import com.r.bigconf.processing.ConfProcess;
+import com.r.bigconf.core.model.Conference;
+import com.r.bigconf.core.model.User;
+import com.r.bigconf.local.SingleThreadConferenceProcess;
 
 import java.util.HashSet;
 import java.util.Optional;
@@ -12,7 +12,7 @@ import java.util.function.Function;
 
 public abstract class BaseConferenceManager implements ConferenceManager {
 
-    private final Set<ConfProcess> activeProcesses = new HashSet<>();
+    private final Set<SingleThreadConferenceProcess> activeProcesses = new HashSet<>();
 
     protected Conference createConferenceInstance(User user) {
         Conference conference = new Conference();
@@ -20,7 +20,7 @@ public abstract class BaseConferenceManager implements ConferenceManager {
         return conference;
     }
 
-    protected Set<ConfProcess> getActiveProcesses() {
+    protected Set<SingleThreadConferenceProcess> getActiveProcesses() {
         return activeProcesses;
     }
 
@@ -49,7 +49,7 @@ public abstract class BaseConferenceManager implements ConferenceManager {
     protected  <T> T withConference(UUID conferenceId, Function<Conference, T> function) {
         Optional<Conference> optional = activeProcesses.stream()
                 .filter(confProcess -> conferenceId.equals(confProcess.getConference().getId()))
-                .map(ConfProcess::getConference)
+                .map(SingleThreadConferenceProcess::getConference)
                 .findFirst();
         if (optional.isPresent()) {
             Conference conference = optional.get();

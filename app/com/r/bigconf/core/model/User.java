@@ -1,4 +1,4 @@
-package com.r.bigconf.model;
+package com.r.bigconf.core.model;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;

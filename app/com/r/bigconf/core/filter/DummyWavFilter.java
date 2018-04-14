@@ -1,10 +1,10 @@
-package com.r.bigconf.filter;
+package com.r.bigconf.core.filter;
 
 import java.nio.ByteBuffer;
 
-import static com.r.bigconf.sound.wav.WavUtils.getHiPart;
-import static com.r.bigconf.sound.wav.WavUtils.getLoPart;
-import static com.r.bigconf.sound.wav.WavUtils.getaShort;
+import static com.r.bigconf.core.sound.wav.WavUtils.getHiPart;
+import static com.r.bigconf.core.sound.wav.WavUtils.getLoPart;
+import static com.r.bigconf.core.sound.wav.WavUtils.getaShort;
 
 public class DummyWavFilter implements Filter {
 

@@ -1,4 +1,4 @@
-package com.r.bigconf.sound.wav;
+package com.r.bigconf.core.sound.wav;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;

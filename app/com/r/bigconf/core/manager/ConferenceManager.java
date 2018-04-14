@@ -1,7 +1,7 @@
-package com.r.bigconf.manager;
+package com.r.bigconf.core.manager;
 
-import com.r.bigconf.model.Conference;
-import com.r.bigconf.model.User;
+import com.r.bigconf.core.model.Conference;
+import com.r.bigconf.core.model.User;
 
 import java.util.UUID;
 
