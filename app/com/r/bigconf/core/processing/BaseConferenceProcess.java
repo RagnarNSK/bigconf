@@ -3,11 +3,13 @@ package com.r.bigconf.core.processing;
 import com.r.bigconf.core.filter.Filter;
 import com.r.bigconf.core.model.Conference;
 import com.r.bigconf.core.sound.wav.WavUtils;
+import lombok.extern.slf4j.Slf4j;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 public class BaseConferenceProcess {
     protected final Conference conference;
     public boolean minimizeTotalChannel = false;
@@ -24,6 +26,7 @@ public class BaseConferenceProcess {
     }
 
     public void processInterval() {
+        log.trace("Processing interval for conference {} started", conference.getId());
         Map<Integer, ByteBuffer> incomingBackup = new HashMap<>(incoming);
         incoming.clear();
         buildBuffers(incomingBackup);
@@ -32,6 +35,7 @@ public class BaseConferenceProcess {
         building = activeBackup;
         building.audioChannels.clear();
         building.commonChannel = null;
+        log.trace("Processing interval for conference {} finished", conference.getId());
     }
 
     public void addIncoming(Integer userId, ByteBuffer byteBuffer, Filter filter) {

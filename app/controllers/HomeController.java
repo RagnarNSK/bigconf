@@ -3,9 +3,11 @@ package controllers;
 import akka.util.ByteString;
 import com.fasterxml.jackson.databind.util.ByteBufferBackedInputStream;
 import com.r.bigconf.core.filter.DummyWavFilter;
+import com.r.bigconf.core.filter.Filter;
 import com.r.bigconf.ignite.IgniteConferenceManager;
 import com.r.bigconf.core.manager.ConferenceManager;
 import com.r.bigconf.core.model.Conference;
+import com.r.bigconf.ignite.IgniteConferenceProcess;
 import com.r.bigconf.local.SingleThreadConferenceProcess;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.ignite.Ignite;
@@ -28,10 +30,11 @@ import java.util.concurrent.CompletableFuture;
 public class HomeController extends Controller {
 
     public static final String USER_ID_KEY = "userId";
-    public static final DummyWavFilter FILTER = new DummyWavFilter();
+    public static final Filter FILTER = new DummyWavFilter();
 
     private Conference testConference = new Conference(1000);
-    private SingleThreadConferenceProcess testConfProcess = new SingleThreadConferenceProcess(testConference);
+    //private SingleThreadConferenceProcess testConfProcess = new SingleThreadConferenceProcess(testConference);
+    private final IgniteConferenceProcess testConfProcess = new IgniteConferenceProcess(testConference);
 
     private final ConferenceManager conferenceManager;
 
@@ -40,15 +43,15 @@ public class HomeController extends Controller {
         Ignite ignite = Ignition.start();
         log.info("Ignite {} started", ignite.name());
         conferenceManager = new IgniteConferenceManager(ignite);
-
-        testConfProcess.isActive = true;
-        final Thread confProcessThread = new Thread(testConfProcess);
-        confProcessThread.start();
+        testConference.setActive(true);
+        ignite.scheduler().runLocal(testConfProcess);
+        //final Thread confProcessThread = new Thread(testConfProcess);
+        //confProcessThread.start();
         lifecycle.addStopHook(() -> {
             log.info("Clearing app data");
+            testConference.setActive(false);
+            //confProcessThread.interrupt();
             ignite.close();
-            testConfProcess.isActive = false;
-            confProcessThread.interrupt();
             log.info("shutdown executing");
             return CompletableFuture.completedFuture(null);
         });
