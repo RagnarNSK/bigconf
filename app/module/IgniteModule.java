@@ -8,7 +8,7 @@ import com.r.bigconf.ignite.IgniteHolder;
 import com.r.bigconf.ignite.IgniteHolderImpl;
 import com.r.bigconf.ignite.service.IgniteUserService;
 
-public class BigConfModule extends AbstractModule {
+public class IgniteModule extends AbstractModule {
     @Override
     protected void configure() {
         bind(ConferenceService.class).to(IgniteConferenceService.class);
