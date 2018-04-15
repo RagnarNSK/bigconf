@@ -2,17 +2,10 @@ package controllers;
 
 import akka.util.ByteString;
 import com.fasterxml.jackson.databind.util.ByteBufferBackedInputStream;
-import com.r.bigconf.core.filter.DummyWavFilter;
-import com.r.bigconf.core.filter.Filter;
-import com.r.bigconf.ignite.IgniteConferenceManager;
-import com.r.bigconf.core.manager.ConferenceManager;
-import com.r.bigconf.core.model.Conference;
-import com.r.bigconf.ignite.IgniteConferenceProcess;
-import com.r.bigconf.local.SingleThreadConferenceProcess;
+import com.r.bigconf.core.model.User;
+import com.r.bigconf.core.service.UserService;
+import com.r.bigconf.core.service.ConferenceService;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.ignite.Ignite;
-import org.apache.ignite.Ignition;
-import play.inject.ApplicationLifecycle;
 import play.mvc.*;
 
 import javax.inject.Inject;
@@ -20,7 +13,8 @@ import java.io.*;
 import java.nio.ByteBuffer;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.util.concurrent.CompletableFuture;
+
+import static com.r.bigconf.core.model.Conference.DEFAULT_RECORD_INTERVAL;
 
 /**
  * This controller contains an action to handle HTTP requests
@@ -29,50 +23,34 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 public class HomeController extends Controller {
 
-    public static final String USER_ID_KEY = "userId";
-    public static final Filter FILTER = new DummyWavFilter();
+    private static final String USER_ID_KEY = "userId";
 
-    private Conference testConference = new Conference(1000);
-    //private SingleThreadConferenceProcess testConfProcess = new SingleThreadConferenceProcess(testConference);
-    private final IgniteConferenceProcess testConfProcess = new IgniteConferenceProcess(testConference);
-
-    private final ConferenceManager conferenceManager;
+    private final ConferenceService conferenceService;
+    private final UserService userService;
 
     @Inject
-    public HomeController(ApplicationLifecycle lifecycle) {
-        Ignite ignite = Ignition.start();
-        log.info("Ignite {} started", ignite.name());
-        conferenceManager = new IgniteConferenceManager(ignite);
-        testConference.setActive(true);
-        ignite.scheduler().runLocal(testConfProcess);
-        //final Thread confProcessThread = new Thread(testConfProcess);
-        //confProcessThread.start();
-        lifecycle.addStopHook(() -> {
-            log.info("Clearing app data");
-            testConference.setActive(false);
-            //confProcessThread.interrupt();
-            ignite.close();
-            log.info("shutdown executing");
-            return CompletableFuture.completedFuture(null);
-        });
+    public HomeController(ConferenceService conferenceService, UserService userService) {
+        this.conferenceService = conferenceService;
+        this.userService = userService;
     }
 
     public Result index() {
         if (!session().containsKey(USER_ID_KEY)) {
             try {
-                session().put(USER_ID_KEY, Integer.toString(SecureRandom.getInstance("SHA1PRNG").nextInt()));
+                String mockUserId = "testUser"+Integer.toString(SecureRandom.getInstance("SHA1PRNG").nextInt());
+                userService.registerUser(new User(mockUserId, mockUserId));
+                session().put(USER_ID_KEY, mockUserId);
             } catch (NoSuchAlgorithmException e) {
                 throw new IllegalStateException(e);
             }
         }
-        return ok(views.html.index.render(testConference.getRecordInterval()));
+        return ok(views.html.index.render(DEFAULT_RECORD_INTERVAL));
     }
 
     public Result upload() {
         ByteString byteString = request().body().asRaw().asBytes();
         if (byteString != null) {
-            int userId = getUserId();
-            testConfProcess.addIncoming(userId, byteString.asByteBuffer(), FILTER);
+            conferenceService.addIncoming(getUserId(), byteString.asByteBuffer());
             return ok("File uploaded");
         } else {
             flash("error", "Missing file");
@@ -81,7 +59,7 @@ public class HomeController extends Controller {
     }
 
     public Result conference() throws IOException {
-        ByteBuffer bytes = testConfProcess.getForUser(getUserId());
+        ByteBuffer bytes = conferenceService.getForUser(getUserId());
         if (bytes != null) {
             return ok(new ByteBufferBackedInputStream(bytes));
         } else {
@@ -94,10 +72,10 @@ public class HomeController extends Controller {
         return null;
     }
 
-    private int getUserId() {
+    private String getUserId() {
         String idString = session().get(USER_ID_KEY);
         if (idString != null) {
-            return Integer.parseInt(idString);
+            return idString;
         } else {
             throw new IllegalStateException("unauthorized");
         }

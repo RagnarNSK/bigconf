@@ -1,11 +1,12 @@
-package com.r.bigconf.core.manager;
+package com.r.bigconf.core.service;
 
 import com.r.bigconf.core.model.Conference;
 import com.r.bigconf.core.model.User;
 
+import java.nio.ByteBuffer;
 import java.util.UUID;
 
-public interface ConferenceManager {
+public interface ConferenceService {
 
     Conference getConference(UUID conferenceId);
 
@@ -16,4 +17,8 @@ public interface ConferenceManager {
     Conference leaveConference(UUID conferenceId, User user);
 
     void close();
+
+    ByteBuffer getForUser(String userId);
+
+    void addIncoming(String userId, ByteBuffer byteBuffer);
 }

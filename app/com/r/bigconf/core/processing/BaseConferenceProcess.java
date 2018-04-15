@@ -1,7 +1,7 @@
 package com.r.bigconf.core.processing;
 
-import com.r.bigconf.core.filter.Filter;
-import com.r.bigconf.core.model.Conference;
+import com.r.bigconf.core.processing.model.ConferenceChannelsData;
+import com.r.bigconf.core.processing.model.ConferenceProcessData;
 import com.r.bigconf.core.sound.wav.WavUtils;
 import lombok.extern.slf4j.Slf4j;
 
@@ -11,47 +11,23 @@ import java.util.Map;
 
 @Slf4j
 public class BaseConferenceProcess {
-    protected final Conference conference;
+
     public boolean minimizeTotalChannel = false;
-    private volatile ConferenceChannelsData active = new ConferenceChannelsData();
-    private ConferenceChannelsData building = new ConferenceChannelsData();
-    private Map<Integer, ByteBuffer> incoming = new HashMap<>();
 
-    public BaseConferenceProcess(Conference conference) {
-        this.conference = conference;
+    public void processInterval(ConferenceProcessData processData) {
+        log.trace("Processing interval for conference started");
+        Map<Integer, ByteBuffer> incomingBackup = new HashMap<>(processData.getIncoming());
+        processData.getIncoming().clear();
+        buildBuffers(processData.getBuilding(), incomingBackup);
+        ConferenceChannelsData activeBackup = processData.getActive();
+        processData.setActive(processData.getBuilding());
+        activeBackup.getAudioChannels().clear();
+        activeBackup.setCommonChannel(null);
+        processData.setBuilding(activeBackup);
+        log.trace("Processing interval for conference finished");
     }
 
-    public Conference getConference() {
-        return conference;
-    }
-
-    public void processInterval() {
-        log.trace("Processing interval for conference {} started", conference.getId());
-        Map<Integer, ByteBuffer> incomingBackup = new HashMap<>(incoming);
-        incoming.clear();
-        buildBuffers(incomingBackup);
-        ConferenceChannelsData activeBackup = active;
-        active = building;
-        building = activeBackup;
-        building.audioChannels.clear();
-        building.commonChannel = null;
-        log.trace("Processing interval for conference {} finished", conference.getId());
-    }
-
-    public void addIncoming(Integer userId, ByteBuffer byteBuffer, Filter filter) {
-        incoming.put(userId, filter != null ? filter.filter(byteBuffer) : byteBuffer);
-    }
-
-    public ByteBuffer getForUser(int userId) {
-        if (active != null) {
-            ByteBuffer special = active.audioChannels.get(userId);
-            return special != null ? special : active.commonChannel;
-        } else {
-            return null;
-        }
-    }
-
-    private void buildBuffers(Map<Integer, ByteBuffer> incomingBackup) {
+    private void buildBuffers(ConferenceChannelsData building, Map<Integer, ByteBuffer> incomingBackup) {
         if (incomingBackup.size() == 0) {
             return;
         }
@@ -66,17 +42,17 @@ public class BaseConferenceProcess {
         }
         int dataStartIndex = 44;
         int buffersSize = maxLength + dataStartIndex;
-        building.commonChannel = ByteBuffer.allocate(buffersSize);
+        building.setCommonChannel(ByteBuffer.allocate(buffersSize));
         for (Integer id : incomingBackup.keySet()) {
-            building.audioChannels.put(id, ByteBuffer.allocate(buffersSize));
+            building.getAudioChannels().put(id, ByteBuffer.allocate(buffersSize));
         }
         //copy headers
         ByteBuffer value = incomingBackup.entrySet().iterator().next().getValue();
         value.position(0);
         for (int i = 0; i < dataStartIndex; i++) {
             byte headerByte = value.get(i);
-            building.commonChannel.put(i, headerByte);
-            for (ByteBuffer buffer : building.audioChannels.values()) {
+            building.getCommonChannel().put(i, headerByte);
+            for (ByteBuffer buffer : building.getAudioChannels().values()) {
                 buffer.put(i, headerByte);
             }
         }
@@ -92,7 +68,7 @@ public class BaseConferenceProcess {
             int totalMinimized = minimizeTotalChannel ? total / incomingBackup.size() : total;
             byte totalHi = WavUtils.getHiPart(totalMinimized);
             byte totalLo = WavUtils.getLoPart(totalMinimized);
-            WavUtils.putBytes(building.commonChannel, i, totalHi, totalLo);
+            WavUtils.putBytes(building.getCommonChannel(), i, totalHi, totalLo);
 
             for (Map.Entry<Integer, ByteBuffer> entry : incomingBackup.entrySet()) {
                 final byte hiPart;
@@ -108,7 +84,7 @@ public class BaseConferenceProcess {
                     hiPart = totalHi;
                     loPart = totalLo;
                 }
-                WavUtils.putBytes(building.audioChannels.get(entry.getKey()), i, hiPart, loPart);
+                WavUtils.putBytes(building.getAudioChannels().get(entry.getKey()), i, hiPart, loPart);
             }
         }
         //building.compressedCommonChannel = codec.compress(building.commonChannel);
@@ -118,13 +94,4 @@ public class BaseConferenceProcess {
         return i + 1 < lengthsMap.get(entry.getKey()) + 44;
     }
 
-    private static class ConferenceChannelsData {
-        /**
-         * Audio channels map
-         * key - integer - user id
-         * value - wav content of conference WITHOUT source of user identified by key
-         */
-        private Map<Integer, ByteBuffer> audioChannels = new HashMap<>();
-        private ByteBuffer commonChannel;
-    }
 }
