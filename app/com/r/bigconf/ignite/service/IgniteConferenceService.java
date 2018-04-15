@@ -37,12 +37,13 @@ public class IgniteConferenceService extends BaseConferenceService {
 
     @Override
     public ByteBuffer getForUser(String userId) {
+        //TODO
         return null;
     }
 
     @Override
     public void addIncoming(String userId, ByteBuffer byteBuffer) {
-
+        //TODO
     }
 
     @Override

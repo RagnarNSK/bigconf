@@ -16,24 +16,20 @@ public class BaseConferenceProcess {
 
     public void processInterval(ConferenceProcessData processData) {
         log.trace("Processing interval for conference started");
-        Map<Integer, ByteBuffer> incomingBackup = new HashMap<>(processData.getIncoming());
-        processData.getIncoming().clear();
-        buildBuffers(processData.getBuilding(), incomingBackup);
-        ConferenceChannelsData activeBackup = processData.getActive();
-        processData.setActive(processData.getBuilding());
-        activeBackup.getAudioChannels().clear();
-        activeBackup.setCommonChannel(null);
-        processData.setBuilding(activeBackup);
+        Map<Integer, ByteBuffer> incoming = processData.getUsersIncomingData();
+        ConferenceChannelsData building = processData.getChannelsDataObjectToFill();
+        buildBuffers(building, incoming);
+        processData.replaceWithNewChannelsData(building);
         log.trace("Processing interval for conference finished");
     }
 
-    private void buildBuffers(ConferenceChannelsData building, Map<Integer, ByteBuffer> incomingBackup) {
-        if (incomingBackup.size() == 0) {
+    private void buildBuffers(ConferenceChannelsData toBuild, Map<Integer, ByteBuffer> incomingDataMap) {
+        if (incomingDataMap.size() == 0) {
             return;
         }
         final Map<Integer, Integer> lengthsMap = new HashMap<>();
         int maxLength = 0;
-        for (Map.Entry<Integer, ByteBuffer> entry : incomingBackup.entrySet()) {
+        for (Map.Entry<Integer, ByteBuffer> entry : incomingDataMap.entrySet()) {
             int dataLength = WavUtils.getDataLength(entry.getValue());
             if (dataLength > maxLength) {
                 maxLength = dataLength;
@@ -42,49 +38,49 @@ public class BaseConferenceProcess {
         }
         int dataStartIndex = 44;
         int buffersSize = maxLength + dataStartIndex;
-        building.setCommonChannel(ByteBuffer.allocate(buffersSize));
-        for (Integer id : incomingBackup.keySet()) {
-            building.getAudioChannels().put(id, ByteBuffer.allocate(buffersSize));
+        toBuild.setCommonChannel(ByteBuffer.allocate(buffersSize));
+        for (Integer id : incomingDataMap.keySet()) {
+            toBuild.getAudioChannels().put(id, ByteBuffer.allocate(buffersSize));
         }
         //copy headers
-        ByteBuffer value = incomingBackup.entrySet().iterator().next().getValue();
+        ByteBuffer value = incomingDataMap.entrySet().iterator().next().getValue();
         value.position(0);
         for (int i = 0; i < dataStartIndex; i++) {
             byte headerByte = value.get(i);
-            building.getCommonChannel().put(i, headerByte);
-            for (ByteBuffer buffer : building.getAudioChannels().values()) {
+            toBuild.getCommonChannel().put(i, headerByte);
+            for (ByteBuffer buffer : toBuild.getAudioChannels().values()) {
                 buffer.put(i, headerByte);
             }
         }
         for (int i = dataStartIndex; i < buffersSize; i = i + 2) {
             int total = 0;
-            for (Map.Entry<Integer, ByteBuffer> entry : incomingBackup.entrySet()) {
+            for (Map.Entry<Integer, ByteBuffer> entry : incomingDataMap.entrySet()) {
                 if (checkLength(lengthsMap, i, entry)) {
                     byte hi = entry.getValue().get(i + 1);
                     byte lo = entry.getValue().get(i);
                     total = total + WavUtils.getaShort(hi, lo);
                 }
             }
-            int totalMinimized = minimizeTotalChannel ? total / incomingBackup.size() : total;
+            int totalMinimized = minimizeTotalChannel ? total / incomingDataMap.size() : total;
             byte totalHi = WavUtils.getHiPart(totalMinimized);
             byte totalLo = WavUtils.getLoPart(totalMinimized);
-            WavUtils.putBytes(building.getCommonChannel(), i, totalHi, totalLo);
+            WavUtils.putBytes(toBuild.getCommonChannel(), i, totalHi, totalLo);
 
-            for (Map.Entry<Integer, ByteBuffer> entry : incomingBackup.entrySet()) {
+            for (Map.Entry<Integer, ByteBuffer> entry : incomingDataMap.entrySet()) {
                 final byte hiPart;
                 final byte loPart;
                 if (checkLength(lengthsMap, i, entry)) {
                     byte hi = entry.getValue().get(i + 1);
                     byte lo = entry.getValue().get(i);
                     int specific = total - WavUtils.getaShort(hi, lo);
-                    int specificMinimized = minimizeTotalChannel ? specific / incomingBackup.size() - 1 : specific;
+                    int specificMinimized = minimizeTotalChannel ? specific / incomingDataMap.size() - 1 : specific;
                     hiPart = WavUtils.getHiPart(specificMinimized);
                     loPart = WavUtils.getLoPart(specificMinimized);
                 } else {
                     hiPart = totalHi;
                     loPart = totalLo;
                 }
-                WavUtils.putBytes(building.getAudioChannels().get(entry.getKey()), i, hiPart, loPart);
+                WavUtils.putBytes(toBuild.getAudioChannels().get(entry.getKey()), i, hiPart, loPart);
             }
         }
         //building.compressedCommonChannel = codec.compress(building.commonChannel);

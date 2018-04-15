@@ -1,7 +1,7 @@
 package com.r.bigconf.core.processing;
 
 import com.r.bigconf.core.filter.DummyWavFilter;
-import com.r.bigconf.core.processing.model.ConferenceProcessData;
+import com.r.bigconf.core.processing.model.ConferenceProcessDataObject;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -18,7 +18,7 @@ public class SingleThreadConferenceProcessTest {
     @Test
     public void run() throws Exception {
         BaseConferenceProcess confProcess = new BaseConferenceProcess();
-        ConferenceProcessData processData = new ConferenceProcessData();
+        ConferenceProcessDataObject processData = new ConferenceProcessDataObject();
         addIncoming(processData, "D:\\workspace\\bigconf\\bigconf\\test\\resources\\1.wav", 1);
         addIncoming(processData, "D:\\workspace\\bigconf\\bigconf\\test\\resources\\2.wav", 2);
 
@@ -31,7 +31,7 @@ public class SingleThreadConferenceProcessTest {
         open.write(forUser);
     }
 
-    private void addIncoming(ConferenceProcessData processData, String path, int userId) throws IOException {
+    private void addIncoming(ConferenceProcessDataObject processData, String path, int userId) throws IOException {
         FileChannel fileChannel = FileChannel.open(Paths.get(path));
         MappedByteBuffer byteBuffer = fileChannel.map(FileChannel.MapMode.READ_ONLY, 0, fileChannel.size());
         processData.addIncoming(userId,byteBuffer, FILTER);
