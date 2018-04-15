@@ -1,5 +1,7 @@
 package com.r.bigconf.ignite;
 
+import org.apache.ignite.Ignite;
+
 public interface IgniteHolder {
-    org.apache.ignite.Ignite getIgnite();
+    Ignite getIgnite();
 }

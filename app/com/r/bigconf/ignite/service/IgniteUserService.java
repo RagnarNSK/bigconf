@@ -1,14 +1,17 @@
-package com.r.bigconf.ignite;
+package com.r.bigconf.ignite.service;
 
 import com.r.bigconf.core.model.User;
 import com.r.bigconf.core.service.UserService;
+import com.r.bigconf.ignite.IgniteHolder;
 import org.apache.ignite.IgniteCache;
 import org.apache.ignite.cache.CacheMode;
 import org.apache.ignite.configuration.CacheConfiguration;
 
 import javax.inject.Inject;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+
+import static com.r.bigconf.ignite.util.AsyncUtils.toCF;
 
 public class IgniteUserService implements UserService {
 
@@ -26,21 +29,26 @@ public class IgniteUserService implements UserService {
     }
 
     @Override
-    public void registerUser(User user) {
-        getCache().put(user.getId(), user);
+    public CompletableFuture<?> registerUser(User user) {
+        return toCF(getCache().putAsync(user.getId(), user));
     }
 
     @Override
-    public User getUser(String userId) {
-        IgniteCache<String, User> cache = getCache();
-        return cache.get(userId);
+    public CompletableFuture<User> getUser(String userId) {
+        return toCF(getCache().getAsync(userId));
     }
 
     @Override
-    public List<User> getUsers() {
-        return new ArrayList<>(getUsers());
+    public CompletableFuture<List<User>> getUsers() {
+        //TODO
+        return null;
     }
 
+    @Override
+    public CompletableFuture<User> getCurrentUser() {
+        //TODO
+        return null;
+    }
 
     private IgniteCache<String, User> getCache() {
         return igniteHolder.getIgnite().cache(CACHE_NAME);

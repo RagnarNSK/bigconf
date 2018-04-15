@@ -1,7 +1,8 @@
-package com.r.bigconf.ignite;
+package com.r.bigconf.ignite.service;
 
 import com.r.bigconf.core.model.Conference;
 import com.r.bigconf.core.processing.model.ConferenceProcessData;
+import com.r.bigconf.ignite.process.ConferenceDataProvider;
 import org.apache.ignite.Ignite;
 
 import java.util.UUID;

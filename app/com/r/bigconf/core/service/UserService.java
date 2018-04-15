@@ -3,9 +3,12 @@ package com.r.bigconf.core.service;
 import com.r.bigconf.core.model.User;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 public interface UserService {
-    void registerUser(User user);
-    User getUser(String userId);
-    List<User> getUsers();
+    CompletableFuture<?> registerUser(User user);
+    CompletableFuture<User> getUser(String userId);
+    CompletableFuture<List<User>> getUsers();
+
+    CompletableFuture<User> getCurrentUser();
 }

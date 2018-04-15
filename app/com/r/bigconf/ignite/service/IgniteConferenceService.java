@@ -1,8 +1,11 @@
-package com.r.bigconf.ignite;
+package com.r.bigconf.ignite.service;
 
 import com.r.bigconf.core.service.BaseConferenceService;
 import com.r.bigconf.core.model.Conference;
 import com.r.bigconf.core.model.User;
+import com.r.bigconf.ignite.process.ConferenceDataProvider;
+import com.r.bigconf.ignite.process.IgniteConferenceProcess;
+import com.r.bigconf.ignite.IgniteHolder;
 
 import javax.inject.Inject;
 import java.nio.ByteBuffer;

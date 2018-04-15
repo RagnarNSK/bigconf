@@ -1,4 +1,4 @@
-package com.r.bigconf.ignite;
+package com.r.bigconf.ignite.process;
 
 import com.r.bigconf.core.model.Conference;
 import com.r.bigconf.core.processing.BaseConferenceProcess;
