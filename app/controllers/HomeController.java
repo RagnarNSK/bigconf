@@ -6,6 +6,10 @@ import com.r.bigconf.core.model.User;
 import com.r.bigconf.core.service.UserService;
 import com.r.bigconf.core.service.ConferenceService;
 import lombok.extern.slf4j.Slf4j;
+import org.pac4j.core.config.Config;
+import org.pac4j.core.exception.TechnicalException;
+import org.pac4j.http.client.indirect.FormClient;
+import org.pac4j.play.java.Secure;
 import play.mvc.*;
 
 import javax.inject.Inject;
@@ -27,13 +31,21 @@ public class HomeController extends Controller {
 
     private final ConferenceService conferenceService;
     private final UserService userService;
+    private final Config config;
 
     @Inject
-    public HomeController(ConferenceService conferenceService, UserService userService) {
+    public HomeController(ConferenceService conferenceService, UserService userService, Config config) {
         this.conferenceService = conferenceService;
         this.userService = userService;
+        this.config = config;
     }
 
+    public Result loginForm() throws TechnicalException {
+        final FormClient formClient = (FormClient) config.getClients().findClient("FormClient");
+        return ok(views.html.security.loginForm.render(formClient.getCallbackUrl()));
+    }
+
+    @Secure
     public Result index() {
         if (!session().containsKey(USER_ID_KEY)) {
             try {
@@ -47,6 +59,7 @@ public class HomeController extends Controller {
         return ok(views.html.index.render(DEFAULT_RECORD_INTERVAL));
     }
 
+    @Secure
     public Result upload() {
         ByteString byteString = request().body().asRaw().asBytes();
         if (byteString != null) {
@@ -58,6 +71,7 @@ public class HomeController extends Controller {
         }
     }
 
+    @Secure
     public Result conference() throws IOException {
         ByteBuffer bytes = conferenceService.getForUser(getUserId());
         if (bytes != null) {
@@ -67,6 +81,7 @@ public class HomeController extends Controller {
         }
     }
 
+    @Secure
     public Result getConferenceList()  {
         //TODO
         return null;
