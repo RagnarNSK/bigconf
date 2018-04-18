@@ -18,7 +18,7 @@ PUT     /user/                           controllers.rest.UserController.update
 GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)
 
 # Security
-GET         /loginForm                        controllers.HomeController.loginForm()
+GET         /loginForm                        controllers.SecurityController.loginForm()
 GET         /callback                         @org.pac4j.play.CallbackController.callback()
 POST        /callback                         @org.pac4j.play.CallbackController.callback()
 GET         /casProxyCallback                 @org.pac4j.play.CallbackController.callback()
