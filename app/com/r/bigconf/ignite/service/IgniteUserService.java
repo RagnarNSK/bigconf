@@ -1,5 +1,6 @@
 package com.r.bigconf.ignite.service;
 
+import com.google.common.collect.Lists;
 import com.r.bigconf.core.model.User;
 import com.r.bigconf.core.service.UserService;
 import com.r.bigconf.ignite.IgniteHolder;
@@ -40,14 +41,11 @@ public class IgniteUserService implements UserService {
 
     @Override
     public CompletableFuture<List<User>> getUsers() {
-        //TODO
-        return null;
-    }
-
-    @Override
-    public CompletableFuture<User> getCurrentUser() {
-        //TODO
-        return null;
+        List<User> result = Lists.newArrayList();
+        getCache().iterator().forEachRemaining(stringUserEntry -> {
+            result.add(stringUserEntry.getValue());
+        });
+        return CompletableFuture.completedFuture(result);
     }
 
     private IgniteCache<String, User> getCache() {

@@ -9,6 +9,4 @@ public interface UserService {
     CompletableFuture<?> registerUser(User user);
     CompletableFuture<User> getUser(String userId);
     CompletableFuture<List<User>> getUsers();
-
-    CompletableFuture<User> getCurrentUser();
 }

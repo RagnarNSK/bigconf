@@ -2,15 +2,15 @@ package controllers.rest;
 
 import com.r.bigconf.core.model.User;
 import com.r.bigconf.core.service.UserService;
+import controllers.UserIdSupportController;
 import play.libs.Json;
-import play.mvc.Controller;
 import play.mvc.Result;
 
 import javax.inject.Inject;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 
-public class UserController extends Controller {
+public class UserController extends UserIdSupportController {
 
     private static final Function<User, Result> USER_TO_JSON = user -> ok(Json.toJson(user));
 
@@ -30,7 +30,7 @@ public class UserController extends Controller {
     }
 
     public CompletionStage<Result> me() {
-        return userService.getCurrentUser().thenApplyAsync(USER_TO_JSON);
+        return userService.getUser(getUserId()).thenApplyAsync(USER_TO_JSON);
     }
 
     public CompletionStage<Result> register(){
@@ -39,7 +39,7 @@ public class UserController extends Controller {
     }
 
     public CompletionStage<Result> update(){
-        //TODO
+        //TODO check if needed
         return null;
     }
 }

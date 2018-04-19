@@ -8,7 +8,7 @@ import java.util.UUID;
 
 @Data
 public class Conference {
-    public static final int DEFAULT_RECORD_INTERVAL = 100;
+    public static final int DEFAULT_RECORD_INTERVAL = 500;
     private final UUID id;
     private final int recordInterval;
     private final List<User> users = new ArrayList<>();

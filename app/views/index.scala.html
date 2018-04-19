@@ -8,13 +8,14 @@
 
     <button id="startButton">Start record</button>
     <button id="stopButton">Stop record</button>
-    <div id="recordLinks">
 
-    </div>
+    @scripts.usersList()
 
     <script src="https://cdn.webrtc-experiment.com/MediaStreamRecorder.js"> </script>
     <script>
             var interval = @recordInterval;
+            var getConfSoundDataURL = '@rest.routes.ConferenceProcessController.conference().url';
+            var uploadConfSoundDataURL = '@rest.routes.ConferenceProcessController.upload().url';
 
             var mediaConstraints = {
                 audio: true
@@ -23,23 +24,15 @@
             navigator.getUserMedia(mediaConstraints, onMediaSuccess, onMediaError);
 
             function onMediaSuccess(stream) {
-                var linksDiv = document.getElementById('recordLinks');
                 var mediaRecorder = new MediaStreamRecorder(stream);
                 var mimeType = 'audio/wav';
                 mediaRecorder.mimeType = mimeType;
                 mediaRecorder.audioChannels = 1;
                 mediaRecorder.ondataavailable = function (blob) {
-                    /* for testing
-                    var blobURL = URL.createObjectURL(blob);
-                    var blockLink = document.createElement('a');
-                    blockLink.setAttribute('href', blobURL);
-                    blockLink.innerHTML = blobURL;
-                    linksDiv.appendChild(blockLink);*/
-
                     var file = new File([blob], 'audio-record', {
                         type: mimeType
                     });
-                    makeXMLHttpRequest('/upload', file, function () {
+                    makeXMLHttpRequest(uploadConfSoundDataURL, file, function () {
                         console.log('Record uploaded');
                     });
                 };
@@ -72,7 +65,7 @@
                 request.send(data);
             }
 
-            var confEnabled =  false;
+            var confEnabled = false;
 
             function stopConf() {
                 confEnabled = false;
@@ -85,7 +78,7 @@
                     var request = new XMLHttpRequest();
                     request.responseType = 'arraybuffer';
                     request.onload = function () {
-                        if(request.status === 200){
+                        if (request.status === 200) {
                             var source = context.createBufferSource();
                             context.decodeAudioData(request.response, function (buffer) {
                                 source.buffer = buffer;
@@ -94,21 +87,24 @@
                             source.start(0);
                         }
                     };
+
                     function confLoop() {
-                        setTimeout(function(){
-                            if(confEnabled){
-                                request.open('GET', '/conference', true);
+                        setTimeout(function () {
+                            if (confEnabled) {
+                                request.open('GET', getConfSoundDataURL, true);
                                 request.send();
                                 confLoop();
                             }
-                        },interval);
+                        }, interval);
                     }
+
                     confEnabled = true;
                     confLoop();
                 } catch (e) {
                     alert("Web Audio API not supported");
                 }
             }
+
             document.getElementById('startConf').onclick = startConf;
             document.getElementById('stopConf').onclick = stopConf;
     </script>

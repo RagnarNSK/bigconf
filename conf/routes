@@ -4,8 +4,8 @@
 
 # An example controller showing a sample home page
 GET     /                           controllers.HomeController.index
-POST    /upload                     controllers.HomeController.upload
-GET     /conference                 controllers.HomeController.conference
+POST    /confProcess/upload         controllers.rest.ConferenceProcessController.upload
+GET     /confProcess/get            controllers.rest.ConferenceProcessController.conference
 
 
 GET     /user/                           controllers.rest.UserController.list
