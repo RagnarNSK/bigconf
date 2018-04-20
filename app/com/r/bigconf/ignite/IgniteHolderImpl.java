@@ -3,7 +3,6 @@ package com.r.bigconf.ignite;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.ignite.Ignite;
-import org.apache.ignite.IgniteCluster;
 import org.apache.ignite.Ignition;
 import org.apache.ignite.configuration.DataStorageConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
@@ -23,6 +22,7 @@ public class IgniteHolderImpl implements IgniteHolder {
     @Inject
     public IgniteHolderImpl(ApplicationLifecycle lifecycle) {
         IgniteConfiguration cfg = new IgniteConfiguration();
+        cfg.setClassLoader(this.getClass().getClassLoader());
         addPersistence(cfg);
         ignite = Ignition.getOrStart(cfg);
         ignite.active(true);

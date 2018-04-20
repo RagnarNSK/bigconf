@@ -13,15 +13,14 @@
         var usersMeURL = '@rest.routes.UserController.me().url';
         $.when($.ready).then(function () {
             $.getJSON(usersMeURL).done(function (data){
-                $("#UsersMeContainer").text("Welcome " + data.login);
+                $("#UsersMeContainer").text("Welcome " + data.name);
             });
-            /*
             $.getJSON(usersListURL).done(function (data) {
                var container = $("#UsersListContainer");
                container.empty();
                data.forEach(function (user) {
-                   container.append("<li>"+user.login+"</li>");
+                   container.append("<li >"+user.name+"</li>");
                })
-            });*/
+            });
         })
 </script>

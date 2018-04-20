@@ -26,6 +26,7 @@ public class IgniteUserService implements UserService {
         CacheConfiguration<String, User> cfg = new CacheConfiguration<>();
         cfg.setName(CACHE_NAME);
         cfg.setCacheMode(CacheMode.REPLICATED);
+        cfg.setTypes(String.class, User.class);
         igniteHolder.getIgnite().getOrCreateCache(cfg);
     }
 
