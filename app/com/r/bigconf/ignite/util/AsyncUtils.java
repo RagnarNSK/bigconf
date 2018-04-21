@@ -1,8 +1,12 @@
 package com.r.bigconf.ignite.util;
 
+import com.google.common.collect.Lists;
 import org.apache.ignite.lang.IgniteFuture;
 
+import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 
 public class AsyncUtils {
 
@@ -24,4 +28,23 @@ public class AsyncUtils {
         });
         return completableFuture;
     }
+
+    public static <T,R> CompletableFuture<List<T>> toCF(Iterator<R> iterator, Function<R,T> extractor) {
+        CompletableFuture<List<T>> future = new CompletableFuture<>();
+        List<T> result = Lists.newArrayList();
+        Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                if (iterator.hasNext()) {
+                    result.add(extractor.apply(iterator.next()));
+                    CompletableFuture.runAsync(this);
+                } else {
+                    future.complete(result);
+                }
+            }
+        };
+        CompletableFuture.runAsync(runnable);
+        return future;
+    }
+
 }

@@ -4,21 +4,25 @@ import com.r.bigconf.core.model.Conference;
 import com.r.bigconf.core.model.User;
 
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 public interface ConferenceService {
 
-    Conference getConference(UUID conferenceId);
+    CompletableFuture<Conference> getConference(UUID conferenceId);
 
-    Conference startConference(User user);
+    CompletableFuture<Conference> startConference(User user);
 
-    Conference joinToConference(UUID conferenceId, User user);
+    CompletableFuture<Conference> joinToConference(UUID conferenceId, User user);
 
-    Conference leaveConference(UUID conferenceId, User user);
+    CompletableFuture<Conference> leaveConference(UUID conferenceId, User user);
 
     void close();
 
-    ByteBuffer getForUser(String userId);
+    CompletableFuture<ByteBuffer> getForUser(String userId);
 
     void addIncoming(String userId, ByteBuffer byteBuffer);
+
+    CompletableFuture<List<Conference>> listAvailableConferences(User user);
 }

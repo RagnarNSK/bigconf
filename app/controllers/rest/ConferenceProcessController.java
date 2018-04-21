@@ -9,7 +9,7 @@ import play.mvc.Result;
 
 import javax.inject.Inject;
 import java.io.IOException;
-import java.nio.ByteBuffer;
+import java.util.concurrent.CompletionStage;
 
 public class ConferenceProcessController extends UserIdSupportController {
 
@@ -33,12 +33,13 @@ public class ConferenceProcessController extends UserIdSupportController {
     }
 
     @Secure
-    public Result conference() throws IOException {
-        ByteBuffer bytes = conferenceService.getForUser(getUserId());
-        if (bytes != null) {
-            return ok(new ByteBufferBackedInputStream(bytes));
-        } else {
-            return status(204);
-        }
+    public CompletionStage<Result> conference() throws IOException {
+        return conferenceService.getForUser(getUserId()).thenApplyAsync(bytes -> {
+            if (bytes != null) {
+                return ok(new ByteBufferBackedInputStream(bytes));
+            } else {
+                return status(204);
+            }
+        });
     }
 }
