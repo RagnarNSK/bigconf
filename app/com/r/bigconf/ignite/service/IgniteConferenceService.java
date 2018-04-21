@@ -1,11 +1,13 @@
 package com.r.bigconf.ignite.service;
 
-import com.r.bigconf.core.processing.model.ConferenceChannelsData;
-import com.r.bigconf.core.processing.model.ConferenceProcessData;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import com.r.bigconf.core.model.ConferenceUsers;
 import com.r.bigconf.core.service.BaseConferenceService;
 import com.r.bigconf.core.model.Conference;
 import com.r.bigconf.core.model.User;
-import com.r.bigconf.ignite.process.ConferenceDataProvider;
+import com.r.bigconf.ignite.service.affinity.ConferenceAffinityService;
+import com.r.bigconf.ignite.service.affinity.ConferenceProcessDataAffinityService;
 import com.r.bigconf.ignite.process.IgniteConferenceProcess;
 import com.r.bigconf.ignite.IgniteHolder;
 import org.apache.ignite.Ignite;
@@ -13,32 +15,30 @@ import org.apache.ignite.IgniteCache;
 import org.apache.ignite.cache.CacheMode;
 import org.apache.ignite.cache.query.QueryCursor;
 import org.apache.ignite.cache.query.ScanQuery;
+import org.apache.ignite.lang.IgniteRunnable;
+import org.apache.ignite.resources.IgniteInstanceResource;
 
 import javax.cache.Cache;
 import javax.inject.Inject;
 import java.nio.ByteBuffer;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
 import static com.r.bigconf.ignite.util.AsyncUtils.toCF;
 
 public class IgniteConferenceService extends BaseConferenceService {
 
-    private static final String CACHE_NAME = "conferencesCache";
-    private static final String SOUND_DATA_CACHE_NAME = "conferenceSoundDataCache";
 
     private final IgniteServiceHelper<UUID, Conference> ish;
     private final IgniteServiceHelper<String, ByteBuffer> soundISH;
-
-    private final ConferenceDataProvider provider = new IgniteConferenceDataProvider(CACHE_NAME);
+    private final IgniteServiceHelper<UUID, ConferenceUsers> confUsersISH;
 
     @Inject
     public IgniteConferenceService(IgniteHolder igniteHolder) {
-        ish = new IgniteServiceHelper<>(CACHE_NAME, igniteHolder, CacheMode.PARTITIONED, UUID.class, Conference.class);
-        soundISH = new IgniteServiceHelper<>(SOUND_DATA_CACHE_NAME, igniteHolder, CacheMode.PARTITIONED, String.class, ByteBuffer.class);
+        ish = new IgniteServiceHelper<>(ConferenceAffinityService.CACHE_NAME, igniteHolder, CacheMode.PARTITIONED, UUID.class, Conference.class);
+        soundISH = new IgniteServiceHelper<>(ConferenceProcessDataAffinityService.SOUND_DATA_CACHE_NAME, igniteHolder, CacheMode.PARTITIONED, String.class, ByteBuffer.class);
+        confUsersISH = new IgniteServiceHelper<>(ConferenceProcessDataAffinityService.USERS_CACHE_NAME, igniteHolder, CacheMode.PARTITIONED, UUID.class, ConferenceUsers.class);
     }
 
     @Override
@@ -46,46 +46,40 @@ public class IgniteConferenceService extends BaseConferenceService {
         //TODO run compute collocated
         Conference conference = createConferenceInstance(user);
         UUID id = conference.getId();
-        IgniteConferenceProcess confProcess = new IgniteConferenceProcess(id, provider);
-        return toCF(ish.getCache().putAsync(id, conference)).thenComposeAsync((nothing) -> {
-            ish.getIgnite().compute().run(confProcess);
-            return toCF(ish.getCache().getAsync(id));
-        });
+        return toCF(ish.getIgnite().compute().affinityRunAsync(ConferenceAffinityService.CACHE_NAME, id, new StartConference(conference)))
+                .thenComposeAsync((nothing)->toCF(ish.getCache().getAsync(id)));
 
     }
 
     @Override
-    public void close() {
-        //TODO
+    public CompletableFuture<Conference> joinToConference(UUID conferenceId, User user) {
+        //return super.joinToConference(conferenceId, user).;
+        return null;
+    }
+
+    @Override
+    public CompletableFuture<Conference> leaveConference(UUID conferenceId, User user) {
+        return null;
     }
 
     @Override
     public CompletableFuture<ByteBuffer> getForUser(UUID conferenceId, String userId) {
+
         IgniteCache<String, ByteBuffer> cache = soundISH.getCache();
-        String soundKey = getSoundKey(conferenceId, userId);
+        String soundKey = ConferenceProcessDataAffinityService.getSoundKey(conferenceId, userId);
         if (cache.containsKey(soundKey)) {
             return toCF(cache.getAsync(soundKey));
         } else {
-            return toCF(cache.getAsync(getCommonSoundKey(conferenceId)));
+            return toCF(cache.getAsync(ConferenceProcessDataAffinityService.getCommonSoundKey(conferenceId)));
         }
     }
 
     @Override
     public CompletableFuture<Void> addIncoming(UUID conferenceId, String userId, ByteBuffer byteBuffer) {
-        return toCF(soundISH.getCache().putAsync(getIncomingSoundKey(conferenceId, userId), byteBuffer));
+        String key = ConferenceProcessDataAffinityService.getIncomingSoundKey(conferenceId, userId);
+        return toCF(soundISH.getCache().putAsync(key, byteBuffer));
     }
 
-    private static String getIncomingSoundKey(UUID conferenceId, String userId) {
-        return "incomingSound:" + conferenceId + ":" + userId;
-    }
-
-    private static String getSoundKey(UUID conferenceId, String userId) {
-        return "sound:" + conferenceId + ":" + userId;
-    }
-
-    private static String getCommonSoundKey(UUID conferenceId) {
-        return "sound:" + conferenceId + ":%common%";
-    }
 
     @Override
     public CompletableFuture<List<Conference>> listAvailableConferences(User user) {
@@ -99,64 +93,20 @@ public class IgniteConferenceService extends BaseConferenceService {
         return toCF(ish.getCache().getAsync(conferenceId));
     }
 
-    private static class IgniteConferenceDataProvider implements ConferenceDataProvider {
 
-        private final String conferenceCacheName;
+    private static class StartConference implements IgniteRunnable {
+        @IgniteInstanceResource
+        private Ignite ignite;
+        private final Conference conference;
 
-        IgniteConferenceDataProvider(String conferenceCacheName) {
-            this.conferenceCacheName = conferenceCacheName;
+        public StartConference(Conference conference) {
+            this.conference = conference;
         }
 
         @Override
-        public Conference getConference(Ignite ignite, UUID conferenceId) {
-            return (Conference) ignite.cache(conferenceCacheName).get(conferenceId);
-        }
-
-        @Override
-        public ConferenceProcessData getConferenceProcessData(Ignite ignite, UUID conferenceId) {
-            return new IgniteConferenceProcessData(ignite, getConference(ignite, conferenceId));
-        }
-
-        private static class IgniteConferenceProcessData implements ConferenceProcessData {
-
-            private final Ignite ignite;
-            private final Conference conference;
-
-            private IgniteConferenceProcessData(Ignite ignite, Conference conference) {
-                this.ignite = ignite;
-                this.conference = conference;
-            }
-
-
-            @Override
-            public Map<String, ByteBuffer> getUsersIncomingData() {
-                UUID conferenceId = conference.getId();
-                return conference.getUsers().stream()
-                        .collect(Collectors.toMap(
-                                User::getId,
-                                (user) -> getCache().get(getIncomingSoundKey(conferenceId, user.getId()))));
-            }
-
-            @Override
-            public ConferenceChannelsData getChannelsDataObjectToFill() {
-                return new ConferenceChannelsData();
-            }
-
-            @Override
-            public void replaceWithNewChannelsData(ConferenceChannelsData builtData) {
-                UUID conferenceId = conference.getId();
-                IgniteCache<String, ByteBuffer> cache = getCache();
-                cache.put(getCommonSoundKey(conferenceId), builtData.getCommonChannel());
-                builtData.getAudioChannels().forEach((userId, bytes) -> {
-                    cache.put(getSoundKey(conferenceId, userId), bytes);
-                });
-
-            }
-
-            private IgniteCache<String, ByteBuffer> getCache() {
-                return ignite.cache(SOUND_DATA_CACHE_NAME);
-            }
-        }
+        public void run() {
+            ConferenceAffinityService conferenceService = new ConferenceAffinityService(ignite);
+            conferenceService.start(conference);
+        };
     }
-
 }

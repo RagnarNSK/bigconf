@@ -23,6 +23,7 @@ public class IgniteServiceHelper<K,V> {
         cfg.setCacheMode(mode);
         cfg.setTypes(keyType, valType);
         igniteHolder.getIgnite().getOrCreateCache(cfg);
+        //TODO data region
     }
 
     public Ignite getIgnite(){

@@ -24,7 +24,14 @@ public class ConferenceController extends UserIdSupportController {
     @Secure
     public CompletionStage<Result> list() {
         return userService.getUser(getUserId())
-                .thenApplyAsync(conferenceService::listAvailableConferences)
+                .thenComposeAsync(conferenceService::listAvailableConferences)
                 .thenApplyAsync(list-> ok(Json.toJson(list)));
+    }
+
+    @Secure
+    public CompletionStage<Result> startNewConference() {
+        return userService.getUser(getUserId())
+                .thenComposeAsync(conferenceService::startConference)
+                .thenApplyAsync(conf-> ok(Json.toJson(conf)));
     }
 }

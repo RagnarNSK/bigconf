@@ -18,8 +18,6 @@ public interface ConferenceService {
 
     CompletableFuture<Conference> leaveConference(UUID conferenceId, User user);
 
-    void close();
-
     CompletableFuture<ByteBuffer> getForUser(UUID conferenceId, String userId);
 
     CompletableFuture<Void> addIncoming(UUID conferenceId, String userId, ByteBuffer byteBuffer);
