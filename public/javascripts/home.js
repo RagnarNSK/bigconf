@@ -1,44 +1,51 @@
-const listItemTemplate = `<li >{{name}}</li>`;
+import {template} from "./templateUtil.js";
+
+
 export class UsersList {
     constructor(container) {
         this.container = container;
         this.url = bigconfRestRoutes.usersList;
+        this.content = `<li >{{name}}</li>`;
     }
+
     init() {
-        let container = this.container;
         let self = this;
-        $(container).append("Initializing");
+        $(self.container).append("Initializing");
         $.getJSON(this.url).done(function (data) {
-            $(container).empty();
+            $(self.container).empty();
             data.forEach(function (user) {
-                let filledTemplate = listItemTemplate.replace(/{{name}}/g, user.name);
+                let filledTemplate = template(self.content, user);
                 let element = $(filledTemplate);
                 element.click(function () {
                     self.onclick(user.id)
                 });
-                $(container).append(element)
+                $(self.container).append(element)
             })
         });
     }
+
     onclick(id) {
-        console.log("user " + id + "clicked");
+        console.log("user " + id + " clicked");
     }
 }
 
-
-const myUserTemplate = `Hello {{name}}`;
 export class MyUserComponent {
     constructor(container) {
         this.container = container;
         this.url = bigconfRestRoutes.usersMe;
+        this.content = `
+<div class="user-block">
+    <h2>{{name}}</h2>
+</div>
+`;
     }
-    init(){
-        let container = this.container;
+
+    init() {
         let self = this;
         $.getJSON(this.url).done(function (data) {
-            $(container).empty();
-            let filledTemplate = myUserTemplate.replace(/{{name}}/g, data.name);
-            $(container).append(filledTemplate);
+            $(self.container).empty();
+            let filledTemplate = template(self.content, data);
+            $(self.container).append(filledTemplate);
         });
     }
 

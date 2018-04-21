@@ -36,7 +36,7 @@ public class HomeController extends UserIdSupportController {
         if (!session().containsKey(USER_ID_KEY)) {
             registerAuthenticatedUser();
         }
-        return ok(views.html.index.render(DEFAULT_RECORD_INTERVAL));
+        return ok(views.html.index.render());
     }
 
     private void registerAuthenticatedUser() {

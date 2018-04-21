@@ -1,7 +1,29 @@
 
 export class TestConf {
+    constructor(container){
+        this.container = container;
+        this.content = `
+    <div id="testConfBlock">
+        <h1>Test conf block</h1>
 
-    init(){
+        <button id="startConf">Start conf</button>
+        <button id="stopConf">Stop conf</button>
+
+        <button id="startButton">Start record</button>
+        <button id="stopButton">Stop record</button>
+
+
+    </div>
+`
+    }
+
+    init(settings){
+        var self = this;
+        var interval = settings.defaultRecordIntervalMs;
+
+        let block = $(self.content);
+        $(self.container).append(block);
+
         var mediaConstraints = {
             audio: true
         };
@@ -30,8 +52,8 @@ export class TestConf {
                 mediaRecorder.stop();
             }
 
-            document.getElementById('startButton').onclick = startRecord;
-            document.getElementById('stopButton').onclick = stopRecord;
+            $('#startButton').click(startRecord);
+            $('#stopButton').click(stopRecord);
         }
 
         function onMediaError(e) {
@@ -90,7 +112,7 @@ export class TestConf {
             }
         }
 
-        document.getElementById('startConf').onclick = startConf;
-        document.getElementById('stopConf').onclick = stopConf;
+        $('#startConf').click(startConf);
+        $('#stopConf').click(stopConf);
     }
 }

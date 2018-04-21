@@ -1,16 +1,24 @@
 import {UsersList, MyUserComponent} from './home.js';
 import {TestConf} from "./testConf.js";
 
-$.when($.ready).then(function () {
-    let usersList = $(`<div id="UsersList"></div>`);
-    let myUser = $(`<div id="MyUser"></div>`);
+$.getJSON(bigconfRestRoutes.settings).done(startApp);
 
-    let root = $("#root");
-    root.append(myUser);
-    root.append(usersList);
+function startApp(settings){
+    $.when($.ready).then(function () {
+        let usersList = $(`<div id="UsersList"></div>`);
+        let myUser = $(`<div id="MyUser"></div>`);
 
-    new MyUserComponent(myUser).init();
-    new UsersList(usersList).init();
+        let root = $("#root");
+        let splashscreen = $("#splashscreen");
+        root.hide();
+        root.append(myUser);
+        root.append(usersList);
 
-    new TestConf().init();
-});
+        new MyUserComponent(myUser).init();
+        new UsersList(usersList).init();
+
+        new TestConf(root).init(settings);
+        splashscreen.hide();
+        root.show();
+    });
+}
