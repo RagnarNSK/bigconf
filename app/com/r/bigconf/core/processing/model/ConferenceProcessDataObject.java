@@ -9,10 +9,10 @@ import java.util.Map;
 public class ConferenceProcessDataObject implements ConferenceProcessData {
     private volatile ConferenceChannelsData active = new ConferenceChannelsData();
     private ConferenceChannelsData building = new ConferenceChannelsData();
-    private Map<Integer, ByteBuffer> incoming = new HashMap<>();
+    private Map<String, ByteBuffer> incoming = new HashMap<>();
 
 
-    public ByteBuffer getForUser(int userId) {
+    public ByteBuffer getForUser(String userId) {
         if (active != null) {
             ByteBuffer special = active.getAudioChannels().get(userId);
             return special != null ? special : active.getCommonChannel();
@@ -21,13 +21,13 @@ public class ConferenceProcessDataObject implements ConferenceProcessData {
         }
     }
 
-    public void addIncoming(Integer userId, ByteBuffer byteBuffer, Filter filter) {
+    public void addIncoming(String userId, ByteBuffer byteBuffer, Filter filter) {
         incoming.put(userId, filter != null ? filter.filter(byteBuffer) : byteBuffer);
     }
 
     @Override
-    public Map<Integer, ByteBuffer> getUsersIncomingData() {
-        Map<Integer, ByteBuffer> ret = new HashMap<>(incoming);
+    public Map<String, ByteBuffer> getUsersIncomingData() {
+        Map<String, ByteBuffer> ret = new HashMap<>(incoming);
         incoming.clear();
         return ret;
     }

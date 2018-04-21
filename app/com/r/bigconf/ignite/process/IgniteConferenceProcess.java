@@ -29,19 +29,25 @@ public class IgniteConferenceProcess extends BaseConferenceProcess implements Ig
     @Override
     public void run() {
         Conference conference = conferenceDataProvider.getConference(ignite, conferenceId);
-        if (conference.isActive()) {
-            ConferenceProcessData processData = conferenceDataProvider.getConferenceProcessData(ignite, conferenceId);
-            processInterval(processData);
-            //TODO store updated data
-            currentTime += conference.getRecordInterval();
-            long timeToSleep = Math.max(currentTime - System.currentTimeMillis(), 0);
-            log.trace("Calculated delay time: {}", timeToSleep);
-            if(timeToSleep > 0) {
-                ignite.scheduler().runLocal(this, timeToSleep, TimeUnit.MILLISECONDS);
+        if (conference != null) {
+            if (conference.isActive()) {
+                ConferenceProcessData processData = conferenceDataProvider.getConferenceProcessData(ignite, conferenceId);
+                processInterval(processData);
+                //TODO store updated data
+                currentTime += conference.getRecordInterval();
+                long timeToSleep = Math.max(currentTime - System.currentTimeMillis(), 0);
+                log.trace("Calculated delay time: {}", timeToSleep);
+                if (timeToSleep > 0) {
+                    ignite.scheduler().runLocal(this, timeToSleep, TimeUnit.MILLISECONDS);
+                } else {
+                    ignite.scheduler().runLocal(this);
+                }
+                log.trace("next execution scheduled");
             } else {
-                ignite.scheduler().runLocal(this);
+                log.trace("conference stopped");
             }
-            log.trace("next execution scheduled");
+        } else {
+            log.error("null conference");
         }
     }
 }

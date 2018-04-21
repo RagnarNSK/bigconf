@@ -16,6 +16,6 @@ public class ConferenceChannelsData {
      * key - integer - user id
      * value - wav content of conference WITHOUT source of user identified by key
      */
-    private final Map<Integer, ByteBuffer> audioChannels = new HashMap<>();
+    private final Map<String, ByteBuffer> audioChannels = new HashMap<>();
     private ByteBuffer commonChannel;
 }

@@ -5,7 +5,7 @@ import java.util.Map;
 
 public interface ConferenceProcessData {
 
-    Map<Integer, ByteBuffer> getUsersIncomingData();
+    Map<String, ByteBuffer> getUsersIncomingData();
 
     ConferenceChannelsData getChannelsDataObjectToFill();
 

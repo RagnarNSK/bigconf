@@ -20,9 +20,9 @@ public interface ConferenceService {
 
     void close();
 
-    CompletableFuture<ByteBuffer> getForUser(String userId);
+    CompletableFuture<ByteBuffer> getForUser(UUID conferenceId, String userId);
 
-    void addIncoming(String userId, ByteBuffer byteBuffer);
+    CompletableFuture<Void> addIncoming(UUID conferenceId, String userId, ByteBuffer byteBuffer);
 
     CompletableFuture<List<Conference>> listAvailableConferences(User user);
 }
