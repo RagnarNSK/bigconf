@@ -17,13 +17,15 @@ public interface ConferenceService {
 
     CompletableFuture<Conference> startConference(User user);
 
+    CompletableFuture<?> stopConference(User user, UUID conferenceId);
+
     CompletableFuture<Conference> joinToConference(UUID conferenceId, User user);
 
     CompletableFuture<Conference> leaveConference(UUID conferenceId, User user);
 
     CompletableFuture<ByteBuffer> getForUser(UUID conferenceId, String userId);
 
-    CompletableFuture<Void> addIncoming(UUID conferenceId, String userId, ByteBuffer byteBuffer);
+    CompletableFuture<?> addIncoming(UUID conferenceId, String userId, ByteBuffer byteBuffer);
 
     CompletableFuture<List<Conference>> listAvailableConferences(User user);
 }

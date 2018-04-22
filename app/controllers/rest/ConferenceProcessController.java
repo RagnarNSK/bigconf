@@ -3,6 +3,7 @@ package controllers.rest;
 import akka.util.ByteString;
 import com.fasterxml.jackson.databind.util.ByteBufferBackedInputStream;
 import com.r.bigconf.core.service.ConferenceService;
+import com.r.bigconf.core.service.UserService;
 import controllers.UserIdSupportController;
 import org.pac4j.play.java.Secure;
 import play.mvc.Result;
@@ -16,10 +17,12 @@ import java.util.function.Function;
 
 public class ConferenceProcessController extends UserIdSupportController {
 
+    private final UserService userService;
     private final ConferenceService conferenceService;
 
     @Inject
-    public ConferenceProcessController(ConferenceService conferenceService) {
+    public ConferenceProcessController(UserService userService, ConferenceService conferenceService) {
+        this.userService = userService;
         this.conferenceService = conferenceService;
     }
 
@@ -44,6 +47,13 @@ public class ConferenceProcessController extends UserIdSupportController {
                 return status(204);
             }
         }));
+    }
+
+    @Secure
+    public CompletionStage<Result> stopConference() {
+        return withConferenceId(confId-> userService.getUser(getUserId())
+                .thenComposeAsync(user->conferenceService.stopConference(user,confId))
+                .thenApplyAsync((nothing)->ok("Stopped")));
     }
 
     private CompletionStage<Result> withConferenceId(Function<UUID,CompletionStage<Result>> command) {

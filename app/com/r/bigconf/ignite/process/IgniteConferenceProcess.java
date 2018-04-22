@@ -29,7 +29,8 @@ public class IgniteConferenceProcess extends BaseConferenceProcess implements Ig
     @Override
     public void run() {
         log.trace("conference process step started");
-        Conference conference = new ConferenceAffinityService(ignite).getConference(conferenceId);
+        ConferenceAffinityService service = new ConferenceAffinityService(ignite);
+        Conference conference = service.getConference(conferenceId);
         if (conference != null) {
             if (conference.isActive()) {
                 ConferenceProcessData processData = new IgniteConferenceProcessData(ignite, conferenceId);
@@ -44,7 +45,8 @@ public class IgniteConferenceProcess extends BaseConferenceProcess implements Ig
                 }
                 log.trace("next execution scheduled");
             } else {
-                log.trace("conference stopped");
+                service.delete(conferenceId);
+                log.info("Conference {} stopped and removed", conferenceId);
             }
         } else {
             log.error("null conference");

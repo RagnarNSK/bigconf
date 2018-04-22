@@ -25,7 +25,7 @@ public class ConferenceProcessDataAffinityService {
     }
 
     public ByteBuffer getUserIncomingData(UUID conferenceId, String userId) {
-        return ish.getCache().get(getIncomingSoundKey(conferenceId, userId));
+        return ish.getCache().getAndRemove(getIncomingSoundKey(conferenceId, userId));
     }
 
     public void storeCommonSound(UUID conferenceId, ByteBuffer commonChannel) {

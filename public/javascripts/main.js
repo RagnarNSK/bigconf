@@ -1,6 +1,6 @@
 import {UsersList, MyUserComponent} from './home.js';
 import {TestConf} from "./testConf.js";
-import {ConferenceListComponent} from "./conferences.js";
+import {ConferenceListComponent, ConfProcessComponent} from "./conferences.js";
 
 $.getJSON(bigconfRestRoutes.settings).done(startApp);
 
@@ -9,6 +9,7 @@ function startApp(settings){
         let usersList = $(`<div id="UsersList"></div>`);
         let myUser = $(`<div id="MyUser"></div>`);
         let confList = $(`<div id="ConfList"></div>`);
+        let confProcess = $(`<div id="ConfProcess"></div>`);
 
         let root = $("#root");
         let splashscreen = $("#splashscreen");
@@ -16,12 +17,14 @@ function startApp(settings){
         root.append(myUser);
         root.append(usersList);
         root.append(confList);
+        root.append(confProcess);
 
         new MyUserComponent(myUser).init();
         new UsersList(usersList).init();
-        new ConferenceListComponent(confList,settings).init();
+        new ConferenceListComponent(confList, window, settings).init();
+        new ConfProcessComponent(confProcess, window, settings).init();
 
-        new TestConf(root).init(settings);
+        //new TestConf(root).init(settings);
         splashscreen.hide();
         root.show();
     });

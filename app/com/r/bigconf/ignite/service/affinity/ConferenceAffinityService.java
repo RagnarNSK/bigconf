@@ -37,4 +37,8 @@ public class ConferenceAffinityService {
         log.info("Conference {} started",conference.getId());
         return conference;
     }
+
+    public void delete(UUID conferenceId) {
+        ish.getCache().remove(conferenceId);
+    }
 }

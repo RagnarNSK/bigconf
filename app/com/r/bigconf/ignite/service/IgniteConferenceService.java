@@ -54,10 +54,28 @@ public class IgniteConferenceService extends BaseConferenceService {
     }
 
     @Override
+    public CompletableFuture<?> stopConference(User user, UUID conferenceId) {
+        return toCF(ish.getCache().invokeAsync(conferenceId, (CacheEntryProcessor<UUID, Conference, Object>)(entry, args)->{
+            if (entry.exists()) {
+                Conference conference = entry.getValue();
+                if (conference.getCreatedBy().equals(args[0])) {
+                    conference.setActive(false);
+                    entry.setValue(conference);
+                } else {
+                    throw new IllegalStateException("Not creator calls stopping");
+                }
+            }
+            return entry;
+        }, user.getId()));
+    }
+
+    @Override
     public CompletableFuture<Conference> joinToConference(UUID conferenceId, User user) {
         return toCF(confUsersISH.getCache()
                 .invokeAsync(conferenceId, (CacheEntryProcessor<UUID, ConferenceUsers, Object>) (entry, arguments) -> {
-                    entry.getValue().getUsersList().add((String) arguments[0]);
+                    ConferenceUsers users = entry.getValue();
+                    users.getUsersList().add((String) arguments[0]);
+                    entry.setValue(users);
                     return entry;
                 }, user.getId())).thenComposeAsync((nothing) -> getConference(conferenceId));
     }
@@ -66,14 +84,15 @@ public class IgniteConferenceService extends BaseConferenceService {
     public CompletableFuture<Conference> leaveConference(UUID conferenceId, User user) {
         return toCF(confUsersISH.getCache()
                 .invokeAsync(conferenceId, (CacheEntryProcessor<UUID, ConferenceUsers, Object>) (entry, arguments) -> {
-                    entry.getValue().getUsersList().remove(arguments[0]);
+                    ConferenceUsers users = entry.getValue();
+                    users.getUsersList().remove(arguments[0]);
+                    entry.setValue(users);
                     return entry;
                 }, user.getId())).thenComposeAsync((nothing) -> getConference(conferenceId));
     }
 
     @Override
     public CompletableFuture<ByteBuffer> getForUser(UUID conferenceId, String userId) {
-
         IgniteCache<String, ByteBuffer> cache = soundISH.getCache();
         String soundKey = ConferenceProcessDataAffinityService.getSoundKey(conferenceId, userId);
         if (cache.containsKey(soundKey)) {
@@ -84,7 +103,7 @@ public class IgniteConferenceService extends BaseConferenceService {
     }
 
     @Override
-    public CompletableFuture<Void> addIncoming(UUID conferenceId, String userId, ByteBuffer byteBuffer) {
+    public CompletableFuture<?> addIncoming(UUID conferenceId, String userId, ByteBuffer byteBuffer) {
         String key = ConferenceProcessDataAffinityService.getIncomingSoundKey(conferenceId, userId);
         return toCF(soundISH.getCache().putAsync(key, byteBuffer));
     }

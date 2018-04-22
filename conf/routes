@@ -6,6 +6,7 @@
 GET     /                           controllers.HomeController.index
 POST    /confProcess/upload         controllers.rest.ConferenceProcessController.upload
 GET     /confProcess/get            controllers.rest.ConferenceProcessController.conference
+POST     /confProcess/stop            controllers.rest.ConferenceProcessController.stopConference
 
 
 GET     /user/                           controllers.rest.UserController.list

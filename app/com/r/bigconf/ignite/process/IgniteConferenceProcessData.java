@@ -10,7 +10,6 @@ import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 public class IgniteConferenceProcessData implements ConferenceProcessData {
 
@@ -28,7 +27,7 @@ public class IgniteConferenceProcessData implements ConferenceProcessData {
         Map<String, ByteBuffer> result = Maps.newHashMap();
         usersList.forEach(userId -> {
             ByteBuffer data = conferenceProcessDataService.getUserIncomingData(conferenceId, userId);
-            if(data != null) {
+            if (data != null) {
                 result.put(userId, data);
             }
         });
@@ -42,7 +41,7 @@ public class IgniteConferenceProcessData implements ConferenceProcessData {
 
     @Override
     public void replaceWithNewChannelsData(ConferenceChannelsData builtData) {
-            conferenceProcessDataService.storeCommonSound(conferenceId, builtData.getCommonChannel());
+        conferenceProcessDataService.storeCommonSound(conferenceId, builtData.getCommonChannel());
         builtData.getAudioChannels().forEach((userId, bytes) -> {
             conferenceProcessDataService.storeUserSound(conferenceId, userId, bytes);
         });
