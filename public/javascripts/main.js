@@ -1,6 +1,6 @@
 import {UsersList, MyUserComponent} from './home.js';
-import {TestConf} from "./testConf.js";
-import {ConferenceListComponent, ConfProcessComponent} from "./conferences.js";
+import {ConferenceListComponent} from "./conferenceList.js";
+import {ConfProcessComponent} from "./conferenceProcess.js";
 
 $.getJSON(bigconfRestRoutes.settings).done(startApp);
 
@@ -24,7 +24,6 @@ function startApp(settings){
         new ConferenceListComponent(confList, window, settings).init();
         new ConfProcessComponent(confProcess, window, settings).init();
 
-        //new TestConf(root).init(settings);
         splashscreen.hide();
         root.show();
     });

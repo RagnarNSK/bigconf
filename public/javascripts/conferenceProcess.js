@@ -1,93 +1,8 @@
-import {template} from "./templateUtil.js";
-
-const confStartedEvent = "confStarted";
-const confStoppedEvent = "confStopped";
-
-/*
-class Conference {
-     id;
-     recordInterval;
-     createdBy;
-     isActive;
-}*/
-
-
-class ConfStartedEvent extends Event{
-    constructor(conference) {
-        super(confStartedEvent);
-        this.conference = conference;
-    }
-    getConference(){
-        return this.conference;
-    }
-}
-
-class ConfStoppedEvent extends Event{
-    constructor(conferenceId) {
-        super(confStoppedEvent);
-        this.conferenceId = conferenceId;
-    }
-    getConferenceId(){
-        return this.conferenceId;
-    }
-}
-
-export class ConferenceListComponent {
-
-    constructor(container, bus, settings) {
-        this.container = container;
-        this.bus = bus;
-        this.settings = settings;
-        this.listUrl = bigconfRestRoutes.conferencesList;
-        this.startNewUrl = bigconfRestRoutes.startConference;
-        this.content = `
-        <div class="conferencesBlock">
-            <div class="controls">
-                <button class="createConfButton">Create</button>            
-            </div>        
-            <ul class="conferencesList"/>
-        </div>
-        `;
-
-        this.listItemContent = `<li data-confId="{{id}}">Conf createdBy {{createdBy}}</li>`;
-    }
-
-    init() {
-        var self = this;
-        let content = $(self.content);
-        content.find(".createConfButton").click(function () {
-            $.post(self.startNewUrl).done(function (conference) {
-                self.bus.dispatchEvent(new ConfStartedEvent(conference));
-                self.refresh(false);
-            });
-        });
-        $(self.container).append(content);
-        self.refresh(true);
-        self.bus.addEventListener(confStoppedEvent, function(event) {
-            console.log("Conference " + event.getConferenceId() + " stopped");
-            self.refresh(false);
-        });
-    }
-
-    refresh(schedule) {
-        var self = this;
-        let list = $(self.container).find(".conferencesList");
-        $.getJSON(self.listUrl).done(function (data) {
-            list.empty();
-            data.forEach(function (conf) {
-                list.append(template(self.listItemContent, conf));
-            });
-            if(schedule) {
-                setTimeout(function(){self.refresh(true)}, self.settings.conferenceListUpdateIntervalMs);
-            }
-        });
-    }
-}
-
+import {confStartedEvent, ConfStoppedEvent} from "./events.js";
 
 export class ConfProcessComponent {
 
-    constructor(container,  bus, settings) {
+    constructor(container, bus, settings) {
         this.container = container;
         this.bus = bus;
         this.settings = settings;
@@ -129,7 +44,7 @@ export class ConfProcessComponent {
     stopConf() {
         let self = this;
         self.confEnabled = false;
-        $.post(self.getUrlWithConfId(self.stopConfUrl)).done(function(){
+        $.post(self.getUrlWithConfId(self.stopConfUrl)).done(function () {
             let confId = self.conferenceId;
             self.reset();
             $(self.container).find(".confProcessBlock").remove();
@@ -154,6 +69,7 @@ export class ConfProcessComponent {
                     source.start(0);
                 }
             };
+
             function confLoop() {
                 setTimeout(function () {
                     if (self.confEnabled) {
@@ -163,6 +79,7 @@ export class ConfProcessComponent {
                     }
                 }, self.interval);
             }
+
             self.confEnabled = true;
             confLoop();
         } catch (e) {
@@ -177,13 +94,14 @@ export class ConfProcessComponent {
             audio: true
         };
         navigator.getUserMedia(mediaConstraints, onMediaSuccess, onMediaError);
+
         function onMediaSuccess(stream) {
             self.mediaRecorder = new MediaStreamRecorder(stream);
             let mimeType = 'audio/wav';
             self.mediaRecorder.mimeType = mimeType;
             self.mediaRecorder.audioChannels = 1;
             self.mediaRecorder.ondataavailable = function (blob) {
-                if(self.recording) {
+                if (self.recording) {
                     var file = new File([blob], 'audio-record', {
                         type: mimeType
                     });
@@ -214,16 +132,16 @@ export class ConfProcessComponent {
         }
 
 
-        this.bus.addEventListener(confStartedEvent, function(event){
+        this.bus.addEventListener(confStartedEvent, function (event) {
             self.conferenceId = event.getConference().id;
             self.interval = event.getConference().recordInterval;
-            console.log("On conf started "+self.conferenceId + " with interval " + self.interval);
-            if(!!self.conferenceId && !!self.interval) {
+            console.log("On conf started " + self.conferenceId + " with interval " + self.interval);
+            if (!!self.conferenceId && !!self.interval) {
                 let block = $(self.content);
                 let muteButton = block.find(".muteButton");
                 muteButton.click(function () {
                     muteButton.prop('disabled', true);
-                    if(self.recording) {
+                    if (self.recording) {
                         self.stopRecord()
                     } else {
                         self.startRecord()
@@ -232,7 +150,7 @@ export class ConfProcessComponent {
                     muteButton.prop('disabled', false);
                 });
 
-                block.find(".stopButton").click(function(){
+                block.find(".stopButton").click(function () {
                     self.stopConf();
                 });
 

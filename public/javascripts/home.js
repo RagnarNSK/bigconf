@@ -5,7 +5,7 @@ export class UsersList {
     constructor(container) {
         this.container = container;
         this.url = bigconfRestRoutes.usersList;
-        this.content = `<li >{{name}}</li>`;
+        this.content = `<li data-user-id="{{id}}123">{{name}}</li>`;
     }
 
     init() {
@@ -16,16 +16,14 @@ export class UsersList {
             data.forEach(function (user) {
                 let filledTemplate = template(self.content, user);
                 let element = $(filledTemplate);
-                element.click(function () {
-                    self.onclick(user.id)
-                });
+                element.click(self.onclick);
                 $(self.container).append(element)
             })
         });
     }
 
-    onclick(id) {
-        console.log("user " + id + " clicked");
+    onclick() {
+        console.log("user " + $(this).data("user-id") + " clicked");
     }
 }
 
