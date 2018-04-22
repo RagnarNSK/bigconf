@@ -1,6 +1,7 @@
 package com.r.bigconf.core.service;
 
 import com.r.bigconf.core.model.Conference;
+import com.r.bigconf.core.model.ConferenceUsers;
 import com.r.bigconf.core.model.User;
 
 import java.nio.ByteBuffer;
@@ -11,6 +12,8 @@ import java.util.concurrent.CompletableFuture;
 public interface ConferenceService {
 
     CompletableFuture<Conference> getConference(UUID conferenceId);
+
+    CompletableFuture<ConferenceUsers> getConferenceUsers(UUID conferenceId);
 
     CompletableFuture<Conference> startConference(User user);
 

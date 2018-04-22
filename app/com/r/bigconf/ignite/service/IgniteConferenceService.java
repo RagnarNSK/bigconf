@@ -1,17 +1,16 @@
 package com.r.bigconf.ignite.service;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import com.r.bigconf.core.model.ConferenceUsers;
 import com.r.bigconf.core.service.BaseConferenceService;
 import com.r.bigconf.core.model.Conference;
 import com.r.bigconf.core.model.User;
+import com.r.bigconf.ignite.CacheDataType;
 import com.r.bigconf.ignite.service.affinity.ConferenceAffinityService;
 import com.r.bigconf.ignite.service.affinity.ConferenceProcessDataAffinityService;
-import com.r.bigconf.ignite.process.IgniteConferenceProcess;
 import com.r.bigconf.ignite.IgniteHolder;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
+import org.apache.ignite.cache.CacheEntryProcessor;
 import org.apache.ignite.cache.CacheMode;
 import org.apache.ignite.cache.query.QueryCursor;
 import org.apache.ignite.cache.query.ScanQuery;
@@ -19,6 +18,8 @@ import org.apache.ignite.lang.IgniteRunnable;
 import org.apache.ignite.resources.IgniteInstanceResource;
 
 import javax.cache.Cache;
+import javax.cache.processor.EntryProcessorException;
+import javax.cache.processor.MutableEntry;
 import javax.inject.Inject;
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -36,30 +37,37 @@ public class IgniteConferenceService extends BaseConferenceService {
 
     @Inject
     public IgniteConferenceService(IgniteHolder igniteHolder) {
-        ish = new IgniteServiceHelper<>(ConferenceAffinityService.CACHE_NAME, igniteHolder, CacheMode.PARTITIONED, UUID.class, Conference.class);
-        soundISH = new IgniteServiceHelper<>(ConferenceProcessDataAffinityService.SOUND_DATA_CACHE_NAME, igniteHolder, CacheMode.PARTITIONED, String.class, ByteBuffer.class);
-        confUsersISH = new IgniteServiceHelper<>(ConferenceProcessDataAffinityService.USERS_CACHE_NAME, igniteHolder, CacheMode.PARTITIONED, UUID.class, ConferenceUsers.class);
+        ish = new IgniteServiceHelper<>(ConferenceAffinityService.CACHE_NAME, igniteHolder, UUID.class, Conference.class, CacheDataType.CONFERENCE_DATA);
+        confUsersISH = new IgniteServiceHelper<>(ConferenceProcessDataAffinityService.USERS_CACHE_NAME, igniteHolder, UUID.class, ConferenceUsers.class, CacheDataType.CONFERENCE_DATA);
+        soundISH = new IgniteServiceHelper<>(ConferenceProcessDataAffinityService.SOUND_DATA_CACHE_NAME, igniteHolder, String.class, ByteBuffer.class, CacheDataType.CONFERENCE_SOUND_DATA);
     }
 
     @Override
     public CompletableFuture<Conference> startConference(User user) {
-        //TODO run compute collocated
         Conference conference = createConferenceInstance(user);
         UUID id = conference.getId();
-        return toCF(ish.getIgnite().compute().affinityRunAsync(ConferenceAffinityService.CACHE_NAME, id, new StartConference(conference)))
-                .thenComposeAsync((nothing)->toCF(ish.getCache().getAsync(id)));
+        return toCF(ish.getIgnite().compute()
+                .affinityRunAsync(ConferenceAffinityService.CACHE_NAME, id, new StartConference(conference)))
+                .thenComposeAsync((nothing)->getConference(id));
 
     }
 
     @Override
     public CompletableFuture<Conference> joinToConference(UUID conferenceId, User user) {
-        //return super.joinToConference(conferenceId, user).;
-        return null;
+        return toCF(confUsersISH.getCache()
+                .invokeAsync(conferenceId, (CacheEntryProcessor<UUID, ConferenceUsers, Object>) (entry, arguments) -> {
+            entry.getValue().getUsersList().add((String)arguments[0]);
+            return entry;
+        }, user.getId())).thenComposeAsync((nothing)->getConference(conferenceId));
     }
 
     @Override
     public CompletableFuture<Conference> leaveConference(UUID conferenceId, User user) {
-        return null;
+        return toCF(confUsersISH.getCache()
+                .invokeAsync(conferenceId, (CacheEntryProcessor<UUID, ConferenceUsers, Object>) (entry, arguments) -> {
+            entry.getValue().getUsersList().remove(arguments[0]);
+            return entry;
+        }, user.getId())).thenComposeAsync((nothing)->getConference(conferenceId));
     }
 
     @Override
@@ -91,6 +99,11 @@ public class IgniteConferenceService extends BaseConferenceService {
     @Override
     public CompletableFuture<Conference> getConference(UUID conferenceId) {
         return toCF(ish.getCache().getAsync(conferenceId));
+    }
+
+    @Override
+    public CompletableFuture<ConferenceUsers> getConferenceUsers(UUID conferenceId) {
+        return toCF(confUsersISH.getCache().getAsync(conferenceId));
     }
 
 

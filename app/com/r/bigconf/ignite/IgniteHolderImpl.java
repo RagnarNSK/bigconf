@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.Ignition;
+import org.apache.ignite.configuration.DataRegionConfiguration;
 import org.apache.ignite.configuration.DataStorageConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
 import play.inject.ApplicationLifecycle;
@@ -36,7 +37,17 @@ public class IgniteHolderImpl implements IgniteHolder {
 
     private void addPersistence(IgniteConfiguration cfg) {
         DataStorageConfiguration storageCfg = new DataStorageConfiguration();
-        storageCfg.getDefaultDataRegionConfiguration().setPersistenceEnabled(true);
+
+        DataRegionConfiguration userRegion = new DataRegionConfiguration();
+        userRegion.setName(CacheDataType.Constants.PERSISTED);
+        userRegion.setPersistenceEnabled(true);
+
+        DataRegionConfiguration confRegion = new DataRegionConfiguration();
+        confRegion.setName(CacheDataType.Constants.NOT_PERSISTED);
+        confRegion.setPersistenceEnabled(false);
+
+        storageCfg.setDataRegionConfigurations(userRegion, confRegion);
+
         cfg.setDataStorageConfiguration(storageCfg);
     }
 }

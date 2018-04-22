@@ -1,5 +1,6 @@
 package com.r.bigconf.ignite.service;
 
+import com.r.bigconf.ignite.CacheDataType;
 import com.r.bigconf.ignite.IgniteHolder;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
@@ -13,17 +14,16 @@ public class IgniteServiceHelper<K,V> {
 
     public IgniteServiceHelper(String cacheName,
                                IgniteHolder igniteHolder,
-                               CacheMode mode,
                                Class<K> keyType,
-                               Class<V> valType) {
+                               Class<V> valType,
+                               CacheDataType cacheType) {
         this.cacheName = cacheName;
         this.igniteHolder = igniteHolder;
         CacheConfiguration<K, V> cfg = new CacheConfiguration<>();
         cfg.setName(cacheName);
-        cfg.setCacheMode(mode);
         cfg.setTypes(keyType, valType);
+        cacheType.configure(cfg);
         igniteHolder.getIgnite().getOrCreateCache(cfg);
-        //TODO data region
     }
 
     public Ignite getIgnite(){

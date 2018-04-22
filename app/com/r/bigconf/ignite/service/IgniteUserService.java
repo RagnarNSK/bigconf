@@ -2,6 +2,7 @@ package com.r.bigconf.ignite.service;
 
 import com.r.bigconf.core.model.User;
 import com.r.bigconf.core.service.UserService;
+import com.r.bigconf.ignite.CacheDataType;
 import com.r.bigconf.ignite.IgniteHolder;
 import org.apache.ignite.cache.CacheMode;
 
@@ -20,7 +21,7 @@ public class IgniteUserService implements UserService {
 
     @Inject
     public IgniteUserService(IgniteHolder igniteHolder) {
-        ish = new IgniteServiceHelper<>(CACHE_NAME, igniteHolder, CacheMode.REPLICATED, String.class, User.class);
+        ish = new IgniteServiceHelper<>(CACHE_NAME, igniteHolder, String.class, User.class, CacheDataType.USERS_DATA);
     }
 
     @Override
