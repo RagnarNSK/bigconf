@@ -29,11 +29,21 @@ public class ConferenceProcessDataAffinityService {
     }
 
     public void storeCommonSound(UUID conferenceId, ByteBuffer commonChannel) {
-        ish.getCache().put(getCommonSoundKey(conferenceId), commonChannel);
+        String key = getCommonSoundKey(conferenceId);
+        if (commonChannel != null) {
+            ish.getCache().put(key, commonChannel);
+        } else {
+            ish.getCache().remove(key);
+        }
     }
 
     public void storeUserSound(UUID conferenceId, String userId, ByteBuffer bytes) {
-        ish.getCache().put(getSoundKey(conferenceId, userId), bytes);
+        String key = getSoundKey(conferenceId, userId);
+        if (bytes != null) {
+            ish.getCache().put(key, bytes);
+        } else {
+            ish.getCache().remove(key);
+        }
     }
 
     public void saveUserForConference(UUID id, ConferenceUsers conferenceUsers) {

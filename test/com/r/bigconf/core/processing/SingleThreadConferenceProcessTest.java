@@ -19,19 +19,19 @@ public class SingleThreadConferenceProcessTest {
     public void run() throws Exception {
         BaseConferenceProcess confProcess = new BaseConferenceProcess();
         ConferenceProcessDataObject processData = new ConferenceProcessDataObject();
-        addIncoming(processData, "D:\\workspace\\bigconf\\bigconf\\test\\resources\\1.wav", 1);
-        addIncoming(processData, "D:\\workspace\\bigconf\\bigconf\\test\\resources\\2.wav", 2);
+        addIncoming(processData, "D:\\workspace\\bigconf\\bigconf\\test\\resources\\1.wav", "1");
+        addIncoming(processData, "D:\\workspace\\bigconf\\bigconf\\test\\resources\\2.wav", "2");
 
         long now = System.currentTimeMillis();
         confProcess.processInterval(processData);
         System.out.println(System.currentTimeMillis() - now);
-        ByteBuffer forUser = processData.getForUser(7);
+        ByteBuffer forUser = processData.getForUser("7");
         FileChannel open = FileChannel.open(Paths.get("D:\\workspace\\bigconf\\bigconf\\target\\result.wav"),
                 StandardOpenOption.WRITE, StandardOpenOption.CREATE);
         open.write(forUser);
     }
 
-    private void addIncoming(ConferenceProcessDataObject processData, String path, int userId) throws IOException {
+    private void addIncoming(ConferenceProcessDataObject processData, String path, String userId) throws IOException {
         FileChannel fileChannel = FileChannel.open(Paths.get(path));
         MappedByteBuffer byteBuffer = fileChannel.map(FileChannel.MapMode.READ_ONLY, 0, fileChannel.size());
         processData.addIncoming(userId,byteBuffer, FILTER);

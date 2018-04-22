@@ -28,6 +28,7 @@ public class IgniteConferenceProcess extends BaseConferenceProcess implements Ig
 
     @Override
     public void run() {
+        log.trace("conference process step started");
         Conference conference = new ConferenceAffinityService(ignite).getConference(conferenceId);
         if (conference != null) {
             if (conference.isActive()) {

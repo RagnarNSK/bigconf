@@ -4,10 +4,13 @@ import com.google.common.collect.Sets;
 import com.r.bigconf.core.model.Conference;
 import com.r.bigconf.core.model.ConferenceUsers;
 import com.r.bigconf.ignite.process.IgniteConferenceProcess;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.ignite.Ignite;
+import org.apache.ignite.Ignition;
 
 import java.util.UUID;
 
+@Slf4j
 public class ConferenceAffinityService {
     public static final String CACHE_NAME = "conferencesCache";
 
@@ -25,11 +28,13 @@ public class ConferenceAffinityService {
         ish.getCache().put(conference.getId(), conference);
     }
 
-    public void start(Conference conference) {
+    public Conference start(Conference conference) {
         ConferenceProcessDataAffinityService processDataService = new ConferenceProcessDataAffinityService(ish.getIgnite());
         saveConference(conference);
         processDataService.saveUserForConference(conference.getId(),
                 new ConferenceUsers(Sets.newHashSet(conference.getCreatedBy())));
-        ish.getIgnite().compute().run(new IgniteConferenceProcess(conference.getId()));
+        Ignition.localIgnite().compute().runAsync(new IgniteConferenceProcess(conference.getId()));
+        log.info("Conference {} started",conference.getId());
+        return conference;
     }
 }

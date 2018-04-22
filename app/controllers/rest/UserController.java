@@ -12,8 +12,6 @@ import java.util.function.Function;
 
 public class UserController extends UserIdSupportController {
 
-    private static final Function<User, Result> USER_TO_JSON = user -> ok(Json.toJson(user));
-
     private final UserService userService;
 
     @Inject
@@ -26,11 +24,11 @@ public class UserController extends UserIdSupportController {
     }
 
     public CompletionStage<Result> one(String id) {
-        return userService.getUser(id).thenApplyAsync(USER_TO_JSON);
+        return userService.getUser(id).thenApplyAsync(user -> ok(Json.toJson(user)));
     }
 
     public CompletionStage<Result> me() {
-        return userService.getUser(getUserId()).thenApplyAsync(USER_TO_JSON);
+        return userService.getUser(getUserId()).thenApplyAsync(user -> ok(Json.toJson(user)));
     }
 
     public CompletionStage<Result> register(){

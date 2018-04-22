@@ -4,7 +4,6 @@ import com.r.bigconf.ignite.CacheDataType;
 import com.r.bigconf.ignite.IgniteHolder;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
-import org.apache.ignite.cache.CacheMode;
 import org.apache.ignite.configuration.CacheConfiguration;
 
 public class IgniteServiceHelper<K,V> {

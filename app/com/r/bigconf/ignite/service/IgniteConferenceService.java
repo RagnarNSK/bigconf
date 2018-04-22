@@ -11,25 +11,25 @@ import com.r.bigconf.ignite.IgniteHolder;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
 import org.apache.ignite.cache.CacheEntryProcessor;
-import org.apache.ignite.cache.CacheMode;
 import org.apache.ignite.cache.query.QueryCursor;
 import org.apache.ignite.cache.query.ScanQuery;
-import org.apache.ignite.lang.IgniteRunnable;
+import org.apache.ignite.lang.IgniteCallable;
 import org.apache.ignite.resources.IgniteInstanceResource;
 
 import javax.cache.Cache;
-import javax.cache.processor.EntryProcessorException;
-import javax.cache.processor.MutableEntry;
 import javax.inject.Inject;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ForkJoinPool;
 
 import static com.r.bigconf.ignite.util.AsyncUtils.toCF;
 
 public class IgniteConferenceService extends BaseConferenceService {
 
+    private static final Executor affinityCallsExecutor = new ForkJoinPool();
 
     private final IgniteServiceHelper<UUID, Conference> ish;
     private final IgniteServiceHelper<String, ByteBuffer> soundISH;
@@ -46,9 +46,10 @@ public class IgniteConferenceService extends BaseConferenceService {
     public CompletableFuture<Conference> startConference(User user) {
         Conference conference = createConferenceInstance(user);
         UUID id = conference.getId();
-        return toCF(ish.getIgnite().compute()
-                .affinityRunAsync(ConferenceAffinityService.CACHE_NAME, id, new StartConference(conference)))
-                .thenComposeAsync((nothing)->getConference(id));
+        return CompletableFuture.supplyAsync(() -> {
+            return ish.getIgnite().compute()
+                    .affinityCall(ConferenceAffinityService.CACHE_NAME, id, new StartConference(conference));
+        }, affinityCallsExecutor);
 
     }
 
@@ -56,18 +57,18 @@ public class IgniteConferenceService extends BaseConferenceService {
     public CompletableFuture<Conference> joinToConference(UUID conferenceId, User user) {
         return toCF(confUsersISH.getCache()
                 .invokeAsync(conferenceId, (CacheEntryProcessor<UUID, ConferenceUsers, Object>) (entry, arguments) -> {
-            entry.getValue().getUsersList().add((String)arguments[0]);
-            return entry;
-        }, user.getId())).thenComposeAsync((nothing)->getConference(conferenceId));
+                    entry.getValue().getUsersList().add((String) arguments[0]);
+                    return entry;
+                }, user.getId())).thenComposeAsync((nothing) -> getConference(conferenceId));
     }
 
     @Override
     public CompletableFuture<Conference> leaveConference(UUID conferenceId, User user) {
         return toCF(confUsersISH.getCache()
                 .invokeAsync(conferenceId, (CacheEntryProcessor<UUID, ConferenceUsers, Object>) (entry, arguments) -> {
-            entry.getValue().getUsersList().remove(arguments[0]);
-            return entry;
-        }, user.getId())).thenComposeAsync((nothing)->getConference(conferenceId));
+                    entry.getValue().getUsersList().remove(arguments[0]);
+                    return entry;
+                }, user.getId())).thenComposeAsync((nothing) -> getConference(conferenceId));
     }
 
     @Override
@@ -107,7 +108,7 @@ public class IgniteConferenceService extends BaseConferenceService {
     }
 
 
-    private static class StartConference implements IgniteRunnable {
+    private static class StartConference implements IgniteCallable<Conference> {
         @IgniteInstanceResource
         private Ignite ignite;
         private final Conference conference;
@@ -117,9 +118,9 @@ public class IgniteConferenceService extends BaseConferenceService {
         }
 
         @Override
-        public void run() {
+        public Conference call() throws Exception {
             ConferenceAffinityService conferenceService = new ConferenceAffinityService(ignite);
-            conferenceService.start(conference);
-        };
+            return conferenceService.start(conference);
+        }
     }
 }

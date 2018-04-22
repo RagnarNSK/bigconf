@@ -1,8 +1,12 @@
+import {template} from "./templateUtil.js";
+
 export class ConferenceListComponent {
 
-    constructor(container) {
+    constructor(container, settings) {
         this.container = container;
+        this.settings = settings;
         this.listUrl = bigconfRestRoutes.conferencesList;
+        this.startNewUrl = bigconfRestRoutes.startConference;
         this.content = `
         <div class="conferencesBlock">
             <div class="controls">
@@ -11,17 +15,31 @@ export class ConferenceListComponent {
             <ul class="conferencesList"/>
         </div>
         `;
+
+        this.listItemContent = `<li data-confId="{{id}}">Conf createdBy {{createBy}}</li>`;
     }
 
     init() {
         var self = this;
         let content = $(self.content);
         content.find(".createConfButton").click(function () {
-            console.log("TODO create conf");
+            $.post(self.startNewUrl).done(function (conference) {
+                console.log("conference create: " + conference.id);
+            });
         });
-        $.getJSON()
-        content.find(".conferencesList")
+        $(self.container).append(content);
+        self.refresh();
+    }
 
-        $(self.container).append(content)
+    refresh() {
+        var self = this;
+        let list = $(self.container).find(".conferencesList");
+        $.getJSON(self.listUrl).done(function (data) {
+            list.empty();
+            data.forEach(function (conf) {
+                list.append(template(self.listItemContent, conf));
+            });
+            setTimeout(function(){self.refresh()}, self.settings.conferenceListUpdateIntervalMs);
+        });
     }
 }

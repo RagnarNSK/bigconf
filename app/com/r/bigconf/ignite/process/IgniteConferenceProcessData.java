@@ -1,5 +1,6 @@
 package com.r.bigconf.ignite.process;
 
+import com.google.common.collect.Maps;
 import com.r.bigconf.core.processing.model.ConferenceChannelsData;
 import com.r.bigconf.core.processing.model.ConferenceProcessData;
 import com.r.bigconf.ignite.service.affinity.ConferenceProcessDataAffinityService;
@@ -24,11 +25,14 @@ public class IgniteConferenceProcessData implements ConferenceProcessData {
     @Override
     public Map<String, ByteBuffer> getUsersIncomingData() {
         Collection<String> usersList = conferenceProcessDataService.getUsersList(conferenceId);
-
-        return usersList.stream()
-                .collect(Collectors.toMap(
-                        userId->userId,
-                        (userId) -> conferenceProcessDataService.getUserIncomingData(conferenceId, userId)));
+        Map<String, ByteBuffer> result = Maps.newHashMap();
+        usersList.forEach(userId -> {
+            ByteBuffer data = conferenceProcessDataService.getUserIncomingData(conferenceId, userId);
+            if(data != null) {
+                result.put(userId, data);
+            }
+        });
+        return result;
     }
 
     @Override
@@ -38,7 +42,7 @@ public class IgniteConferenceProcessData implements ConferenceProcessData {
 
     @Override
     public void replaceWithNewChannelsData(ConferenceChannelsData builtData) {
-        conferenceProcessDataService.storeCommonSound(conferenceId, builtData.getCommonChannel());
+            conferenceProcessDataService.storeCommonSound(conferenceId, builtData.getCommonChannel());
         builtData.getAudioChannels().forEach((userId, bytes) -> {
             conferenceProcessDataService.storeUserSound(conferenceId, userId, bytes);
         });
