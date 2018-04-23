@@ -2,18 +2,25 @@ package controllers.rest;
 
 import akka.util.ByteString;
 import com.fasterxml.jackson.databind.util.ByteBufferBackedInputStream;
+import com.r.bigconf.core.model.ConferenceUsers;
 import com.r.bigconf.core.service.ConferenceService;
 import com.r.bigconf.core.service.UserService;
 import controllers.UserIdSupportController;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import org.pac4j.play.java.Secure;
+import play.libs.Json;
+import play.mvc.Http;
 import play.mvc.Result;
 
 import javax.inject.Inject;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class ConferenceProcessController extends UserIdSupportController {
 
@@ -30,8 +37,8 @@ public class ConferenceProcessController extends UserIdSupportController {
     public CompletionStage<Result> upload() {
         ByteString byteString = request().body().asRaw().asBytes();
         if (byteString != null) {
-            return withConferenceId((confId)-> conferenceService.addIncoming(confId, getUserId(), byteString.asByteBuffer())
-                    .thenApplyAsync((nothing)-> ok("Sound uploaded")));
+            return withConferenceId((confId) -> conferenceService.addIncoming(confId, getUserId(), byteString.asByteBuffer())
+                    .thenApplyAsync((nothing) -> ok("Sound uploaded")));
         } else {
             flash("error", "Missing file");
             return CompletableFuture.completedFuture(badRequest());
@@ -40,27 +47,38 @@ public class ConferenceProcessController extends UserIdSupportController {
 
     @Secure
     public CompletionStage<Result> conference() {
-        return withConferenceId((conferenceId)-> conferenceService.getForUser(conferenceId, getUserId()).thenApplyAsync(bytes -> {
-            if (bytes != null) {
-                return ok(new ByteBufferBackedInputStream(bytes));
-            } else {
-                return status(204);
-            }
-        }));
+        Http.Response response = response();
+        return withConferenceId((conferenceId) -> conferenceService.getForUser(conferenceId, getUserId())
+                .thenCombineAsync(conferenceService.getConferenceUsers(conferenceId), (bytes, confUsers) -> {
+                    response.setHeader("confUsers", mapConfUsers(confUsers));
+                    if (bytes != null) {
+                        return ok(new ByteBufferBackedInputStream(bytes));
+                    } else {
+                        return status(204);
+                    }
+                }));
+    }
+
+    private String mapConfUsers(ConferenceUsers confUsers) {
+        List<ConfUsersDTO> dtoList = confUsers.getUsersList().stream()
+                .sorted()
+                .map(id -> new ConfUsersDTO(id, 0))
+                .collect(Collectors.toList());
+        return Json.toJson(dtoList).toString();
     }
 
     @Secure
     public CompletionStage<Result> stopConference() {
-        return withConferenceId(confId-> userService.getUser(getUserId())
-                .thenComposeAsync(user->conferenceService.stopConference(user,confId))
-                .thenApplyAsync((nothing)->ok("Stopped")));
+        return withConferenceId(confId -> userService.getUser(getUserId())
+                .thenComposeAsync(user -> conferenceService.stopConference(user, confId))
+                .thenApplyAsync((nothing) -> ok("Stopped")));
     }
 
-    private CompletionStage<Result> withConferenceId(Function<UUID,CompletionStage<Result>> command) {
+    private CompletionStage<Result> withConferenceId(Function<UUID, CompletionStage<Result>> command) {
         UUID confId = null;
         try {
             String queryString = request().getQueryString("confId");
-            if(queryString != null) {
+            if (queryString != null) {
                 confId = UUID.fromString(queryString);
             } else {
                 return CompletableFuture.completedFuture(badRequest("No conference id"));
@@ -69,5 +87,14 @@ public class ConferenceProcessController extends UserIdSupportController {
             return CompletableFuture.completedFuture(badRequest(Optional.ofNullable(e.getMessage()).orElse("null")));
         }
         return command.apply(confId);
+    }
+
+    @Data
+    @AllArgsConstructor
+    public static class ConfUsersDTO {
+        //userId
+        private String u;
+        //muted
+        private int m;
     }
 }

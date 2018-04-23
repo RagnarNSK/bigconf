@@ -1,4 +1,5 @@
-import {confStartedEvent, ConfStoppedEvent} from "./events.js";
+import {confStartedEvent, ConfStoppedEvent, ConfUsersInfo, confUsersInfoEvent} from "./events.js";
+import {template} from "./templateUtil.js";
 
 export class ConfProcessComponent {
 
@@ -22,7 +23,7 @@ export class ConfProcessComponent {
         `;
         this.reset();
 
-        this.listItemContent = `<li data-userId="{{id}}">{{name}}</li>`;
+        this.listItemContent = `<li data-userId="{{id}}">{{name}}, muted = {{muted}}</li>`;
         this.mediaRecorder = null;
     }
 
@@ -67,6 +68,10 @@ export class ConfProcessComponent {
                     }, null);
                     source.connect(context.destination);
                     source.start(0);
+                }
+                let confUsersHeader = request.getResponseHeader("confUsers");
+                if(!!confUsersHeader) {
+                    self.bus.dispatchEvent(new ConfUsersInfo(confUsersHeader));
                 }
             };
 
@@ -131,6 +136,14 @@ export class ConfProcessComponent {
             request.send(data);
         }
 
+        this.bus.addEventListener(confUsersInfoEvent, function (event) {
+            let userListBlock = $(self.container).find(".usersList");
+            //TODO not remove when not needed
+            userListBlock.empty();
+            event.getConfUsersList().forEach(function(dto){
+                userListBlock.append($(template(self.listItemContent,{id:dto.u, name: "Name for "+dto.u, muted:!!dto.m})))
+            });
+        });
 
         this.bus.addEventListener(confStartedEvent, function (event) {
             self.conferenceId = event.getConference().id;
