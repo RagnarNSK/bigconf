@@ -1,50 +1,28 @@
-import {template} from "./templateUtil.js";
-
-
-export class UsersList {
-    constructor(container) {
-        this.container = container;
-        this.url = bigconfRestRoutes.usersList;
-        this.content = `<li data-user-id="{{id}}123">{{name}}</li>`;
-    }
-
-    init() {
-        let self = this;
-        $(self.container).append("Initializing");
-        $.getJSON(this.url).done(function (data) {
-            $(self.container).empty();
-            data.forEach(function (user) {
-                let filledTemplate = template(self.content, user);
-                let element = $(filledTemplate);
-                element.click(self.onclick);
-                $(self.container).append(element)
-            })
+export const UsersListComponent = {
+    template: `<ul><li ng-repeat="user in users" ng-click="userClick(user.id)">{{user.name}}</li></ul>`,
+    controller: ['$scope', 'restRoutes', function ($scope, restRoutes) {
+        $scope.users = [];
+        $.getJSON(restRoutes.usersList).done(function (data) {
+            $scope.users = data;
+            $scope.$applyAsync();
         });
-    }
+        $scope.userClick = function (userId) {
+            console.log("User " + userId + " clicked");
+        }
+    }]
+};
 
-    onclick() {
-        console.log("user " + $(this).data("user-id") + " clicked");
-    }
-}
-
-export class MyUserComponent {
-    constructor(container) {
-        this.container = container;
-        this.url = bigconfRestRoutes.usersMe;
-        this.content = `
+export const MyUserComponent = {
+    template: `
 <div class="user-block">
-    <h2>{{name}}</h2>
+    <h2>Welcome {{user.name}}</h2>
 </div>
-`;
-    }
-
-    init() {
-        let self = this;
-        $.getJSON(this.url).done(function (data) {
-            $(self.container).empty();
-            let filledTemplate = template(self.content, data);
-            $(self.container).append(filledTemplate);
+  `,
+    controller: ['$scope', 'restRoutes', function ($scope, restRoutes) {
+        $scope.user = {};
+        $.getJSON(restRoutes.usersMe).done(function (data) {
+            $scope.user = data;
+            $scope.$applyAsync();
         });
-    }
-
-}
+    }]
+};

@@ -1,4 +1,4 @@
-import {UsersList, MyUserComponent} from './home.js';
+import {UsersListComponent, MyUserComponent} from './home.js';
 import {ConferenceListComponent} from "./conferenceList.js";
 import {ConfProcessComponent} from "./conferenceProcess.js";
 
@@ -6,9 +6,12 @@ $.getJSON(bigconfRestRoutes.settings).done(startApp);
 
 function startApp(settings){
     $.when($.ready).then(function () {
-        let usersList = $(`<div id="UsersList"></div>`);
-        let myUser = $(`<div id="MyUser"></div>`);
-        let confList = $(`<div id="ConfList"></div>`);
+        let module = angular.module('bigConfApp', []);
+        module.constant('restRoutes', bigconfRestRoutes);
+
+        let usersList = $(`<users-list />`);
+        let myUser = $(`<my-user />`);
+        let confList = $(`<conferences-list>`);
         let confProcess = $(`<div id="ConfProcess"></div>`);
 
         let root = $("#root");
@@ -19,12 +22,18 @@ function startApp(settings){
         root.append(confList);
         root.append(confProcess);
 
-        new MyUserComponent(myUser).init();
-        new UsersList(usersList).init();
-        new ConferenceListComponent(confList, window, settings).init();
+        module.constant("settings", settings);
+        module.component("myUser", MyUserComponent);
+        module.component("usersList", UsersListComponent);
+        module.component("conferencesList", ConferenceListComponent);
         new ConfProcessComponent(confProcess, window, settings).init();
 
         splashscreen.hide();
         root.show();
+
+
+        angular.element(function() {
+            angular.bootstrap(document, ['bigConfApp']);
+        });
     });
 }
