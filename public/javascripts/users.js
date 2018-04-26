@@ -1,12 +1,13 @@
 export const UsersListComponent = {
     bindings: {
-        users: '<'
+        users: '<',
+        onClick: '&'
     },
     template: `<ul><li ng-repeat="user in $ctrl.users" ng-click="$ctrl.userClick(user.id)">{{user.name}}</li></ul>`,
     controller:  function () {
         var ctrl = this;
         ctrl.userClick = function (userId) {
-            console.log("User " + userId + " clicked");
+            ctrl.onClick({userId:userId});
         }
     }
 }

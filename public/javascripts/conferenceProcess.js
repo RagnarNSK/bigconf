@@ -10,14 +10,18 @@ export const ConfProcessComponent = {
                     TODO only for creator 
                     <button class="stopButton" ng-click="stopConf()">Stop</button>           
                 </div>        
-                <ul class="usersList"/>
+                <users-list users="users" on-click="confUserClick(userId)"/>
             </div>
         </div>
         `,
-    controller: ['$scope', 'restRoutes', 'settings', function ($scope, restRoutes, settings) {
+    controller: ['$scope', 'restRoutes', 'settings', 'eventBus', function ($scope, restRoutes, settings, bus) {
 
         $scope.confEnabled = false;
         $scope.conferenceId = '951ac562-e633-48c3-8b18-9479f42c58ec';
+
+        $scope.confUserClick = function (confUserId) {
+            console.log("Conf user " + confUserId + " clicked");
+        }
 
         function getUrlWithConfId(url) {
             return url + "?confId=" + $scope.conferenceId;
@@ -83,7 +87,7 @@ export const ConfProcessComponent = {
             $.post(getUrlWithConfId(restRoutes.stopConference)).done(function () {
                 let confId = $scope.conferenceId;
                 $scope.reset();
-                window.dispatchEvent(new ConfStoppedEvent(confId));
+                bus.dispatchEvent(new ConfStoppedEvent(confId));
             });
         };
 
@@ -113,7 +117,7 @@ export const ConfProcessComponent = {
                     }
                     let confUsersHeader = request.getResponseHeader("confUsers");
                     if(!!confUsersHeader) {
-                        window.dispatchEvent(new ConfUsersInfo(confUsersHeader));
+                        bus.dispatchEvent(new ConfUsersInfo(confUsersHeader));
                     }
                 };
 
@@ -135,11 +139,11 @@ export const ConfProcessComponent = {
         };
 
 
-        window.addEventListener(confUsersInfoEvent, function (event) {
+        bus.addEventListener(confUsersInfoEvent, function (event) {
             $scope.users = event.getConfUsersList();
         });
 
-        window.addEventListener(confStartedEvent, function (event) {
+        bus.addEventListener(confStartedEvent, function (event) {
             $scope.conferenceId = event.getConference().id;
             $scope.interval = event.getConference().recordInterval;
             console.log("On conf started " + $scope.conferenceId + " with interval " + $scope.interval);

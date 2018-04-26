@@ -11,7 +11,7 @@ function startApp(settings){
 
         let appContent = $(`
    <div class="globalUsersList" ng-controller="GlobalUsersList">
-        <users-list users="globalUsers"/>   
+        <users-list users="globalUsers" on-click="globalUserClick(userId)"/>   
    </div>     
    <my-user />
    <conferences-list />
@@ -24,16 +24,20 @@ function startApp(settings){
         root.append(appContent);
 
         module.constant("settings", settings);
+        module.constant("eventBus", window);
         module.component("myUser", MyUserComponent);
         module.component("usersList", UsersListComponent);
         module.component("conferencesList", ConferenceListComponent);
         module.component("confProcess", ConfProcessComponent);
         module.controller("GlobalUsersList",['$scope','restRoutes', function ($scope, restRoutes) {
-            $scope.globalUsers = [{id:0, name:'test'}];
+            $scope.globalUsers = [];
             $.getJSON(restRoutes.usersList).done(function (data) {
                 $scope.globalUsers = data;
-                $scope.$digest();
+                $scope.$applyAsync();
             });
+            $scope.globalUserClick = function (userId) {
+                console.log("Global user " + userId + " clicked");
+            }
         }]);
 
         splashscreen.hide();

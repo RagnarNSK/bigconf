@@ -7,7 +7,6 @@ class Conference {
      createdBy;
      isActive;
 }*/
-//TODO confStoppedEvent and bus
 export const ConferenceListComponent = {
     template: `
 <div class="conferencesBlock">
@@ -19,12 +18,12 @@ export const ConferenceListComponent = {
             </ul>
 </div>
 `,
-    controller: ['$scope', 'restRoutes', 'settings', function ($scope, restRoutes, settings) {
+    controller: ['$scope', 'restRoutes', 'settings', 'eventBus', function ($scope, restRoutes, settings, bus) {
         $scope.confs = [];
 
         $scope.createConference = function () {
             $.post(restRoutes.startConference).done(function (conference) {
-                window.dispatchEvent(new ConfStartedEvent(conference));
+                bus.dispatchEvent(new ConfStartedEvent(conference));
                 refresh(false);
             });
         };
@@ -44,6 +43,10 @@ export const ConferenceListComponent = {
             });
         };
         refresh(true);
+
+        bus.addEventListener(confStoppedEvent, function (event) {
+            refresh(false);
+        })
     }]
 };
 

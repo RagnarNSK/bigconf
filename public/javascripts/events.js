@@ -30,6 +30,15 @@ export class ConfUsersInfo extends Event{
         this.confUsersJsonString = confUsersJsonString;
     }
     getConfUsersList() {
-        return JSON.parse(this.confUsersJsonString);
+        let list = JSON.parse(this.confUsersJsonString);
+        let ret = [];
+        list.forEach(function(userShortInfo){
+            ret.push({
+                id: userShortInfo.u,
+                name: "TODO name for user "+ userShortInfo.u,
+                muted: !!userShortInfo.m
+            })
+        });
+        return ret;
     }
 }
