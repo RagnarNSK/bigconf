@@ -1,16 +1,15 @@
 export const UsersListComponent = {
-    template: `<ul><li ng-repeat="user in users" ng-click="userClick(user.id)">{{user.name}}</li></ul>`,
-    controller: ['$scope', 'restRoutes', function ($scope, restRoutes) {
-        $scope.users = [];
-        $.getJSON(restRoutes.usersList).done(function (data) {
-            $scope.users = data;
-            $scope.$applyAsync();
-        });
-        $scope.userClick = function (userId) {
+    bindings: {
+        users: '<'
+    },
+    template: `<ul><li ng-repeat="user in $ctrl.users" ng-click="$ctrl.userClick(user.id)">{{user.name}}</li></ul>`,
+    controller:  function () {
+        var ctrl = this;
+        ctrl.userClick = function (userId) {
             console.log("User " + userId + " clicked");
         }
-    }]
-};
+    }
+}
 
 export const MyUserComponent = {
     template: `

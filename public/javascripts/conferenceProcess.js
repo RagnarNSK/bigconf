@@ -1,124 +1,51 @@
 import {confStartedEvent, ConfStoppedEvent, ConfUsersInfo, confUsersInfoEvent} from "./events.js";
-import {template} from "./templateUtil.js";
 
-export class ConfProcessComponent {
-
-    constructor(container, bus, settings) {
-        this.container = container;
-        this.bus = bus;
-        this.settings = settings;
-        this.uploadConfSoundDataURL = bigconfRestRoutes.uploadConfSoundData;
-        this.getConfSoundDataURL = bigconfRestRoutes.getConfSoundData;
-        this.stopConfUrl = bigconfRestRoutes.stopConference;
-        this.content = `
-        <div class="confProcessBlock">
-            <div class="controls">
-                <button class="muteButton">Mute/unmute</button>
-                
-                TODO only for creator 
-                <button class="stopButton">Stop</button>           
-            </div>        
-            <ul class="usersList"/>
+export const ConfProcessComponent = {
+    template: `
+        <div class="confProcessBlock" >
+            <div ng-if="confEnabled">
+                <div class="controls">
+                    <button class="muteButton" ng-click="toggleMuted()">Mute/unmute</button>
+                    
+                    TODO only for creator 
+                    <button class="stopButton" ng-click="stopConf()">Stop</button>           
+                </div>        
+                <ul class="usersList"/>
+            </div>
         </div>
-        `;
-        this.reset();
+        `,
+    controller: ['$scope', 'restRoutes', 'settings', function ($scope, restRoutes, settings) {
 
-        this.listItemContent = `<li data-userId="{{id}}">{{name}}, muted = {{muted}}</li>`;
-        this.mediaRecorder = null;
-    }
+        $scope.confEnabled = false;
+        $scope.conferenceId = '951ac562-e633-48c3-8b18-9479f42c58ec';
 
-    reset() {
-        this.confEnabled = false;
-        this.recording = false;
-        this.interval = this.settings.defaultRecordIntervalMs;
-        this.conferenceId = null;
-    }
-
-    startRecord() {
-        this.mediaRecorder.start(self.interval);
-    }
-
-    stopRecord() {
-        this.mediaRecorder.stop();
-    }
-
-    stopConf() {
-        let self = this;
-        self.confEnabled = false;
-        $.post(self.getUrlWithConfId(self.stopConfUrl)).done(function () {
-            let confId = self.conferenceId;
-            self.reset();
-            $(self.container).find(".confProcessBlock").remove();
-            self.bus.dispatchEvent(new ConfStoppedEvent(confId));
-        });
-    }
-
-    startConf() {
-        let self = this;
-        try {
-            window.AudioContext = window.AudioContext || window.webkitAudioContext || window.mozAudioContext;
-            let context = new AudioContext();
-            let request = new XMLHttpRequest();
-            request.responseType = 'arraybuffer';
-            request.onload = function () {
-                if (request.status === 200) {
-                    var source = context.createBufferSource();
-                    context.decodeAudioData(request.response, function (buffer) {
-                        source.buffer = buffer;
-                    }, null);
-                    source.connect(context.destination);
-                    source.start(0);
-                }
-                let confUsersHeader = request.getResponseHeader("confUsers");
-                if(!!confUsersHeader) {
-                    self.bus.dispatchEvent(new ConfUsersInfo(confUsersHeader));
-                }
-            };
-
-            function confLoop() {
-                setTimeout(function () {
-                    if (self.confEnabled) {
-                        request.open('GET', self.getUrlWithConfId(self.getConfSoundDataURL), true);
-                        request.send();
-                        confLoop();
-                    }
-                }, self.interval);
-            }
-
-            self.confEnabled = true;
-            confLoop();
-        } catch (e) {
-            alert("Web Audio API not supported");
+        function getUrlWithConfId(url) {
+            return url + "?confId=" + $scope.conferenceId;
         }
-    }
 
-
-    init() {
-        let self = this;
         const mediaConstraints = {
             audio: true
         };
         navigator.getUserMedia(mediaConstraints, onMediaSuccess, onMediaError);
 
         function onMediaSuccess(stream) {
-            self.mediaRecorder = new MediaStreamRecorder(stream);
+            $scope.mediaRecorder = new MediaStreamRecorder(stream);
             let mimeType = 'audio/wav';
-            self.mediaRecorder.mimeType = mimeType;
-            self.mediaRecorder.audioChannels = 1;
-            self.mediaRecorder.ondataavailable = function (blob) {
-                if (self.recording) {
+            $scope.mediaRecorder.mimeType = mimeType;
+            $scope.mediaRecorder.audioChannels = 1;
+            $scope.mediaRecorder.ondataavailable = function (blob) {
+                if ($scope.recording) {
                     var file = new File([blob], 'audio-record', {
                         type: mimeType
                     });
-                    makeXMLHttpRequest(self.getUrlWithConfId(self.uploadConfSoundDataURL), file, function () {
+                    makeXMLHttpRequest(getUrlWithConfId(restRoutes.uploadConfSoundData), file, function () {
                         console.log('Record uploaded');
                     });
                 } else {
-                    self.stopRecord();
+                    $scope.stopRecord();
                 }
             };
         }
-
 
         function onMediaError(e) {
             console.error('media error', e);
@@ -136,44 +63,90 @@ export class ConfProcessComponent {
             request.send(data);
         }
 
-        this.bus.addEventListener(confUsersInfoEvent, function (event) {
-            let userListBlock = $(self.container).find(".usersList");
-            //TODO not remove when not needed
-            userListBlock.empty();
-            event.getConfUsersList().forEach(function(dto){
-                userListBlock.append($(template(self.listItemContent,{id:dto.u, name: "Name for "+dto.u, muted:!!dto.m})))
+        $scope.reset = function () {
+            $scope.confEnabled = false;
+            $scope.recording = false;
+            $scope.interval = settings.defaultRecordIntervalMs;
+            $scope.conferenceId = null;
+        };
+
+        $scope.startRecord = function () {
+            $scope.mediaRecorder.start($scope.interval);
+        };
+
+        $scope.stopRecord = function () {
+            $scope.mediaRecorder.stop();
+        };
+
+        $scope.stopConf = function () {
+            $scope.confEnabled = false;
+            $.post(getUrlWithConfId(restRoutes.stopConference)).done(function () {
+                let confId = $scope.conferenceId;
+                $scope.reset();
+                window.dispatchEvent(new ConfStoppedEvent(confId));
             });
+        };
+
+        $scope.toggleMuted = function () {
+            if ($scope.recording) {
+                $scope.stopRecord()
+            } else {
+                $scope.startRecord()
+            }
+            $scope.recording = !$scope.recording;
+        };
+
+        $scope.startConf = function () {
+            try {
+                window.AudioContext = window.AudioContext || window.webkitAudioContext || window.mozAudioContext;
+                let context = new AudioContext();
+                let request = new XMLHttpRequest();
+                request.responseType = 'arraybuffer';
+                request.onload = function () {
+                    if (request.status === 200) {
+                        var source = context.createBufferSource();
+                        context.decodeAudioData(request.response, function (buffer) {
+                            source.buffer = buffer;
+                        }, null);
+                        source.connect(context.destination);
+                        source.start(0);
+                    }
+                    let confUsersHeader = request.getResponseHeader("confUsers");
+                    if(!!confUsersHeader) {
+                        window.dispatchEvent(new ConfUsersInfo(confUsersHeader));
+                    }
+                };
+
+                function confLoop() {
+                    setTimeout(function () {
+                        if ($scope.confEnabled) {
+                            request.open('GET', getUrlWithConfId(restRoutes.getConfSoundData), true);
+                            request.send();
+                            confLoop();
+                        }
+                    }, $scope.interval);
+                }
+                $scope.confEnabled = true;
+                confLoop();
+                $scope.$applyAsync();
+            } catch (e) {
+                alert("Web Audio API not supported");
+            }
+        };
+
+
+        window.addEventListener(confUsersInfoEvent, function (event) {
+            $scope.users = event.getConfUsersList();
         });
 
-        this.bus.addEventListener(confStartedEvent, function (event) {
-            self.conferenceId = event.getConference().id;
-            self.interval = event.getConference().recordInterval;
-            console.log("On conf started " + self.conferenceId + " with interval " + self.interval);
-            if (!!self.conferenceId && !!self.interval) {
-                let block = $(self.content);
-                let muteButton = block.find(".muteButton");
-                muteButton.click(function () {
-                    muteButton.prop('disabled', true);
-                    if (self.recording) {
-                        self.stopRecord()
-                    } else {
-                        self.startRecord()
-                    }
-                    self.recording = !self.recording;
-                    muteButton.prop('disabled', false);
-                });
-
-                block.find(".stopButton").click(function () {
-                    self.stopConf();
-                });
-
-                $(self.container).append(block);
-                self.startConf();
+        window.addEventListener(confStartedEvent, function (event) {
+            $scope.conferenceId = event.getConference().id;
+            $scope.interval = event.getConference().recordInterval;
+            console.log("On conf started " + $scope.conferenceId + " with interval " + $scope.interval);
+            if (!!$scope.conferenceId && !!$scope.interval) {
+                $scope.startConf();
             }
+            $scope.$applyAsync();
         })
-    }
-
-    getUrlWithConfId(url) {
-        return url + "?confId=" + this.conferenceId;
-    }
-}
+    }]
+};
