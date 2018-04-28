@@ -7,15 +7,19 @@ export const ConfProcessComponent = {
                 <div class="controls">
                     <button class="muteButton" ng-click="toggleMuted()">Mute/unmute</button>
                     
-                    TODO only for creator 
-                    <button class="stopButton" ng-click="stopConf()">Stop</button>           
+                    <button class="stopButton" ng-click="stopConf()" ng-if="currentUser.id==conferenceMaster">Stop</button>  
                 </div>        
                 <ul><li ng-repeat="user in users" ng-click="confUserClick(user.id)">{{user.name}}, muted={{user.muted}}, speaking={{user.speaking}}</li></ul>
             </div>
         </div>
         `,
-    controller: ['$scope', 'restRoutes', 'settings', 'eventBus', function ($scope, restRoutes, settings, bus) {
-
+    controller: ['$scope', 'restRoutes', 'settings', 'eventBus', 'userService', function ($scope, restRoutes, settings, bus, userService) {
+        async function init() {
+            $scope.currentUser = await userService.getCurrentUser();
+        }
+        init().then(()=>{
+            $scope.$applyAsync();
+        });
         $scope.confEnabled = false;
         $scope.conferenceId = null;
 
@@ -147,6 +151,7 @@ export const ConfProcessComponent = {
         bus.addEventListener(confStartedEvent, function (event) {
             $scope.conferenceId = event.getConference().id;
             $scope.interval = event.getConference().recordInterval;
+            $scope.conferenceMaster = event.getConference().createdBy;
             console.log("On conf started " + $scope.conferenceId + " with interval " + $scope.interval);
             if (!!$scope.conferenceId && !!$scope.interval) {
                 $scope.startConf();
