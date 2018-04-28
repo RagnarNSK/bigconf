@@ -4,7 +4,6 @@ import com.r.bigconf.core.model.ConferenceUsers;
 import org.apache.ignite.Ignite;
 
 import java.nio.ByteBuffer;
-import java.util.Collection;
 import java.util.UUID;
 
 public class ConferenceProcessDataAffinityService {
@@ -20,8 +19,8 @@ public class ConferenceProcessDataAffinityService {
         this.usersIsh = new IgniteAffinityServiceHelper<>(USERS_CACHE_NAME, ignite, UUID.class, ConferenceUsers.class);
     }
 
-    public Collection<String> getUsersList(UUID conferenceId) {
-        return usersIsh.getCache().get(conferenceId).getUsersList();
+    public ConferenceUsers getUsers(UUID conferenceId) {
+        return usersIsh.getCache().get(conferenceId);
     }
 
     public ByteBuffer getUserIncomingData(UUID conferenceId, String userId) {
@@ -46,8 +45,8 @@ public class ConferenceProcessDataAffinityService {
         }
     }
 
-    public void saveUserForConference(UUID id, ConferenceUsers conferenceUsers) {
-        usersIsh.getCache().put(id, conferenceUsers);
+    public void saveUserForConference(UUID conferenceId, ConferenceUsers conferenceUsers) {
+        usersIsh.getCache().put(conferenceId, conferenceUsers);
     }
 
     public static String getIncomingSoundKey(UUID conferenceId, String userId) {

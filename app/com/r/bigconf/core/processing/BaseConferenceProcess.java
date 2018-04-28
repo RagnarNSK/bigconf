@@ -1,5 +1,6 @@
 package com.r.bigconf.core.processing;
 
+import com.r.bigconf.core.model.ConferenceUsers;
 import com.r.bigconf.core.processing.model.ConferenceChannelsData;
 import com.r.bigconf.core.processing.model.ConferenceProcessData;
 import com.r.bigconf.core.sound.wav.WavUtils;
@@ -20,7 +21,15 @@ public class BaseConferenceProcess {
         ConferenceChannelsData building = processData.getChannelsDataObjectToFill();
         buildBuffers(building, incoming);
         processData.replaceWithNewChannelsData(building);
+        markSpeakingUsers(processData, incoming);
         log.trace("Processing interval for conference finished");
+    }
+
+    private void markSpeakingUsers(ConferenceProcessData processData, Map<String, ByteBuffer> incoming) {
+        ConferenceUsers users = processData.getUsersInstantDataToModify();
+        users.getUsersData().forEach(conferenceUserInstantData -> {
+            conferenceUserInstantData.setSpeaking(incoming.containsKey(conferenceUserInstantData.getUserId()));
+        });
     }
 
     private void buildBuffers(ConferenceChannelsData toBuild, Map<String, ByteBuffer> incomingDataMap) {

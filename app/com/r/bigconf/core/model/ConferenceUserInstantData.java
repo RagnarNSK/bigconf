@@ -4,11 +4,12 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.Set;
-
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ConferenceUsers {
-    private Set<ConferenceUserInstantData> usersData;
+public class ConferenceUserInstantData {
+    private String userId;
+    private boolean muted;
+    private boolean speaking;
+
 }

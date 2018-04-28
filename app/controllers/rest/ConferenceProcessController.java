@@ -60,11 +60,17 @@ public class ConferenceProcessController extends UserIdSupportController {
     }
 
     private String mapConfUsers(ConferenceUsers confUsers) {
-        List<ConfUsersDTO> dtoList = confUsers.getUsersList().stream()
+        List<ConfUsersDTO> dtoList = confUsers.getUsersData().stream()
                 .sorted()
-                .map(id -> new ConfUsersDTO(id, 0))
+                .map(data -> new ConfUsersDTO(data.getUserId(),
+                        booleanToInt(data.isMuted()),
+                        booleanToInt(data.isSpeaking())))
                 .collect(Collectors.toList());
         return Json.toJson(dtoList).toString();
+    }
+
+    private int booleanToInt(boolean value) {
+        return value ?1:0;
     }
 
     @Secure
@@ -96,5 +102,7 @@ public class ConferenceProcessController extends UserIdSupportController {
         private String u;
         //muted
         private int m;
+        //speaking
+        private int s;
     }
 }

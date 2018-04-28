@@ -1,6 +1,8 @@
 package com.r.bigconf.core.processing.model;
 
+import com.google.common.collect.Sets;
 import com.r.bigconf.core.filter.Filter;
+import com.r.bigconf.core.model.ConferenceUsers;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -10,6 +12,7 @@ public class ConferenceProcessDataObject implements ConferenceProcessData {
     private volatile ConferenceChannelsData active = new ConferenceChannelsData();
     private ConferenceChannelsData building = new ConferenceChannelsData();
     private Map<String, ByteBuffer> incoming = new HashMap<>();
+    private ConferenceUsers conferenceUsers = new ConferenceUsers(Sets.newHashSet());
 
 
     public ByteBuffer getForUser(String userId) {
@@ -44,5 +47,10 @@ public class ConferenceProcessDataObject implements ConferenceProcessData {
         activeBackup.getAudioChannels().clear();
         activeBackup.setCommonChannel(null);
         building = activeBackup;
+    }
+
+    @Override
+    public ConferenceUsers getUsersInstantDataToModify() {
+        return conferenceUsers;
     }
 }

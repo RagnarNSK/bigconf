@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.lang.IgniteRunnable;
 import org.apache.ignite.resources.IgniteInstanceResource;
+import org.apache.ignite.transactions.Transaction;
 
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -33,8 +34,12 @@ public class IgniteConferenceProcess extends BaseConferenceProcess implements Ig
         Conference conference = service.getConference(conferenceId);
         if (conference != null) {
             if (conference.isActive()) {
-                ConferenceProcessData processData = new IgniteConferenceProcessData(ignite, conferenceId);
-                processInterval(processData);
+                try (Transaction transaction = ignite.transactions().txStart()){
+                    IgniteConferenceProcessData processData = new IgniteConferenceProcessData(ignite, conferenceId);
+                    processInterval(processData);
+                    processData.saveUsersData();
+                    transaction.commit();
+                }
                 currentTime += conference.getRecordInterval();
                 long timeToSleep = Math.max(currentTime - System.currentTimeMillis(), 0);
                 log.trace("Calculated delay time: {}", timeToSleep);

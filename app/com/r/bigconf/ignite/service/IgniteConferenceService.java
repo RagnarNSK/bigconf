@@ -1,5 +1,6 @@
 package com.r.bigconf.ignite.service;
 
+import com.r.bigconf.core.model.ConferenceUserInstantData;
 import com.r.bigconf.core.model.ConferenceUsers;
 import com.r.bigconf.core.service.BaseConferenceService;
 import com.r.bigconf.core.model.Conference;
@@ -74,7 +75,8 @@ public class IgniteConferenceService extends BaseConferenceService {
         return toCF(confUsersISH.getCache()
                 .invokeAsync(conferenceId, (CacheEntryProcessor<UUID, ConferenceUsers, Object>) (entry, arguments) -> {
                     ConferenceUsers users = entry.getValue();
-                    users.getUsersList().add((String) arguments[0]);
+                    String userId = (String) arguments[0];
+                    addUser(users, userId);
                     entry.setValue(users);
                     return entry;
                 }, user.getId())).thenComposeAsync((nothing) -> getConference(conferenceId));
@@ -85,7 +87,8 @@ public class IgniteConferenceService extends BaseConferenceService {
         return toCF(confUsersISH.getCache()
                 .invokeAsync(conferenceId, (CacheEntryProcessor<UUID, ConferenceUsers, Object>) (entry, arguments) -> {
                     ConferenceUsers users = entry.getValue();
-                    users.getUsersList().remove(arguments[0]);
+                    String userId = (String) arguments[0];
+                    removeUser(users, userId);
                     entry.setValue(users);
                     return entry;
                 }, user.getId())).thenComposeAsync((nothing) -> getConference(conferenceId));
