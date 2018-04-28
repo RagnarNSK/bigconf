@@ -31,12 +31,8 @@ function startApp(settings){
         module.component("usersList", UsersListComponent);
         module.component("conferencesList", ConferenceListComponent);
         module.component("confProcess", ConfProcessComponent);
-        module.controller("GlobalUsersList",['$scope','restRoutes', function ($scope, restRoutes) {
-            $scope.globalUsers = [];
-            $.getJSON(restRoutes.usersList).done(function (data) {
-                $scope.globalUsers = data;
-                $scope.$applyAsync();
-            });
+        module.controller("GlobalUsersList",['$scope','userService', async function ($scope, userService) {
+            $scope.globalUsers = await userService.getAllUsers();
             $scope.globalUserClick = function (userId) {
                 console.log("Global user " + userId + " clicked");
             }

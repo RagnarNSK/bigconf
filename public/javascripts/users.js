@@ -18,12 +18,7 @@ export const MyUserComponent = {
     <h2>Welcome {{user.name}}</h2>
 </div>
   `,
-    controller: ['$scope', 'userService', function ($scope, userService) {
-        async function init() {
-            $scope.user = await userService.getCurrentUser();
-        }
-        init().then(() => {
-            $scope.$applyAsync();
-        });
+    controller: ['$scope', 'userService', async function ($scope, userService) {
+        $scope.user = await userService.getCurrentUser();
     }]
 };
