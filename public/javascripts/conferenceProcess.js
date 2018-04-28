@@ -10,14 +10,14 @@ export const ConfProcessComponent = {
                     TODO only for creator 
                     <button class="stopButton" ng-click="stopConf()">Stop</button>           
                 </div>        
-                <users-list users="users" on-click="confUserClick(userId)"/>
+                <ul><li ng-repeat="user in users" ng-click="confUserClick(user.id)">{{user.name}}, muted={{user.muted}}, speaking={{user.speaking}}</li></ul>
             </div>
         </div>
         `,
     controller: ['$scope', 'restRoutes', 'settings', 'eventBus', function ($scope, restRoutes, settings, bus) {
 
         $scope.confEnabled = false;
-        $scope.conferenceId = '951ac562-e633-48c3-8b18-9479f42c58ec';
+        $scope.conferenceId = null;
 
         $scope.confUserClick = function (confUserId) {
             console.log("Conf user " + confUserId + " clicked");
@@ -141,6 +141,7 @@ export const ConfProcessComponent = {
 
         bus.addEventListener(confUsersInfoEvent, function (event) {
             $scope.users = event.getConfUsersList();
+            $scope.$applyAsync();
         });
 
         bus.addEventListener(confStartedEvent, function (event) {

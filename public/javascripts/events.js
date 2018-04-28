@@ -36,7 +36,8 @@ export class ConfUsersInfo extends Event{
             ret.push({
                 id: userShortInfo.u,
                 name: "TODO name for user "+ userShortInfo.u,
-                muted: !!userShortInfo.m
+                muted: !!userShortInfo.m,
+                speaking: !!userShortInfo.s
             })
         });
         return ret;
