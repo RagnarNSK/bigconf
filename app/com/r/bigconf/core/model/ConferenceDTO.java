@@ -11,5 +11,6 @@ import java.util.UUID;
 public class ConferenceDTO {
     private final UUID id;
     private final String createdBy;
+    private final int recordInterval;
     private final Set<String> userIds;
 }

@@ -3,13 +3,13 @@ export const UsersListComponent = {
         users: '<',
         onClick: '&'
     },
-    template: `<ul><li ng-repeat="user in $ctrl.users" ng-click="$ctrl.userClick(user.id)">{{user.name}}</li></ul>`,
-    controller: function () {
-        var ctrl = this;
-        ctrl.userClick = function (userId) {
+    template: `<ul><li ng-repeat="user in $ctrl.users" ng-click="userClick(user.id)">{{user.name}}</li></ul>`,
+    controller: [ '$scope', function ($scope) {
+        const ctrl = this;
+        $scope.userClick = function (userId) {
             ctrl.onClick({userId: userId});
         }
-    }
+    }]
 }
 
 export const MyUserComponent = {

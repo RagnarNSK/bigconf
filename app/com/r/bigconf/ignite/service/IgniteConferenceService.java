@@ -118,6 +118,7 @@ public class IgniteConferenceService extends BaseConferenceService {
             ConferenceUsers users = confUsersISH.getCache().get(conf.getId());
             return new ConferenceDTO(conf.getId(),
                     conf.getCreatedBy(),
+                    conf.getRecordInterval(),
                     users.getUsersData().stream()
                             .map(ConferenceUserInstantData::getUserId)
                             .collect(Collectors.toSet()));

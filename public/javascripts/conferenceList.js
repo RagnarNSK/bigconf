@@ -1,4 +1,4 @@
-import {ConfStartedEvent, confStoppedEvent} from "./events.js";
+import {confStoppedEvent} from "./events.js";
 
 /*
 class Conference {
@@ -16,7 +16,10 @@ export const ConferenceListComponent = {
             <ul class="conferencesList">
                 <li ng-repeat="conf in confs" ng-click="confClick(conf.id)">
                     <span>Conference created by {{conf.createdBy}}</span>
-                    <span ng-if="conf.joined">You are joined to this conf</span> 
+                    <span ng-if="conf.joined">
+                        <span>You are joined to this conf</span>
+                        <span ng-if="!conf.active"><button ng-click="selectConf(conf)">Select</button></span>
+                     </span> 
                 </li>
             </ul>
 </div>
@@ -25,20 +28,25 @@ export const ConferenceListComponent = {
         $scope.confs = [];
 
         $scope.createConference = async function () {
-            let conference = await confService.createConference();
-            bus.dispatchEvent(new ConfStartedEvent(conference));
+            await confService.createConference();
             refresh(false);
         };
         $scope.confClick = function (id) {
             console.log("Conf " + id + " clicked");
         };
+        $scope.selectConf = function (conference) {
+            confService.selectConference(conference);
+            refresh(false);
+        };
 
         let refresh = async function (schedule) {
             let currentUser = await userService.getCurrentUser();
+            let currentConferenceId = confService.getCurrentConferenceId();
             $scope.confs = await confService.list();
             $scope.confs.forEach(conf=>{
                 if(!!conf.userIds){
                     conf.joined = conf.userIds.indexOf(currentUser.id) > -1;
+                    conf.active = currentConferenceId === conf.id;
                 }
             });
             $scope.$applyAsync();
@@ -51,7 +59,11 @@ export const ConferenceListComponent = {
         await refresh(true);
 
         bus.addEventListener(confStoppedEvent, function (event) {
-            refresh(false);
+            let conferenceId = event.getConferenceId();
+            let removedIndex = $scope.confs.findIndex((conf)=>{
+                return conferenceId === conf.id;
+            });
+            $scope.confs.splice(removedIndex,1);
         })
     }]
 };
