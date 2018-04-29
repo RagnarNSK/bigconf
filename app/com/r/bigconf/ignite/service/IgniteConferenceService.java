@@ -1,10 +1,7 @@
 package com.r.bigconf.ignite.service;
 
-import com.r.bigconf.core.model.ConferenceUserInstantData;
-import com.r.bigconf.core.model.ConferenceUsers;
+import com.r.bigconf.core.model.*;
 import com.r.bigconf.core.service.BaseConferenceService;
-import com.r.bigconf.core.model.Conference;
-import com.r.bigconf.core.model.User;
 import com.r.bigconf.ignite.CacheDataType;
 import com.r.bigconf.ignite.service.affinity.ConferenceAffinityService;
 import com.r.bigconf.ignite.service.affinity.ConferenceProcessDataAffinityService;
@@ -25,6 +22,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
+import java.util.stream.Collectors;
 
 import static com.r.bigconf.ignite.util.AsyncUtils.toCF;
 
@@ -113,10 +111,18 @@ public class IgniteConferenceService extends BaseConferenceService {
 
 
     @Override
-    public CompletableFuture<List<Conference>> listAvailableConferences(User user) {
+    public CompletableFuture<List<ConferenceDTO>> listAvailableConferences(User user) {
         //TODO filter conferences
-        QueryCursor<Cache.Entry<UUID, Conference>> cursor = ish.getCache().query(new ScanQuery<>());
-        return toCF(cursor.iterator(), Cache.Entry::getValue);
+        QueryCursor<ConferenceDTO> cursor = ish.getCache().query(new ScanQuery<>(),(entry)->{
+            Conference conf = (Conference) entry.getValue();
+            ConferenceUsers users = confUsersISH.getCache().get(conf.getId());
+            return new ConferenceDTO(conf.getId(),
+                    conf.getCreatedBy(),
+                    users.getUsersData().stream()
+                            .map(ConferenceUserInstantData::getUserId)
+                            .collect(Collectors.toSet()));
+        });
+        return toCF(cursor.iterator(), v->v);
     }
 
     @Override

@@ -1,6 +1,7 @@
 package com.r.bigconf.core.service;
 
 import com.r.bigconf.core.model.Conference;
+import com.r.bigconf.core.model.ConferenceDTO;
 import com.r.bigconf.core.model.ConferenceUsers;
 import com.r.bigconf.core.model.User;
 
@@ -27,5 +28,5 @@ public interface ConferenceService {
 
     CompletableFuture<?> addIncoming(UUID conferenceId, String userId, ByteBuffer byteBuffer);
 
-    CompletableFuture<List<Conference>> listAvailableConferences(User user);
+    CompletableFuture<List<ConferenceDTO>> listAvailableConferences(User user);
 }

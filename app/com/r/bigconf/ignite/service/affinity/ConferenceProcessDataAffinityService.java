@@ -49,6 +49,10 @@ public class ConferenceProcessDataAffinityService {
         usersIsh.getCache().put(conferenceId, conferenceUsers);
     }
 
+    public void onConferenceDelete(UUID conferenceId) {
+        usersIsh.getCache().remove(conferenceId);
+    }
+
     public static String getIncomingSoundKey(UUID conferenceId, String userId) {
         return "incomingSound:" + conferenceId + ":" + userId;
     }

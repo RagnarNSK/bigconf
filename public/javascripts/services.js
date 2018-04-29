@@ -1,6 +1,33 @@
+class BaseJSONService {
+    constructor(url) {
+        this.get = async function () {
+            return new Promise((resolve, reject) => {
+                $.getJSON(url)
+                    .done((data) => {
+                        resolve(data);
+                    })
+                    .fail(() => {
+                        reject();
+                    });
+            })
+        }
+        this.post = async function () {
+            return new Promise((resolve, reject) => {
+                $.post(url)
+                    .done((data) => {
+                        resolve(data);
+                    })
+                    .fail(() => {
+                        reject();
+                    });
+            })
+        }
+    }
+}
+
 class BaseSingleFetchService {
     constructor(url) {
-        let instance = this;
+        const instance = this;
         instance.data = null;
         instance.initializing = false;
         instance.pending = [];
@@ -41,16 +68,16 @@ class BaseSingleFetchService {
 
 
 export const UserService = ['restRoutes', function (restRoutes) {
-    var instance = {};
-    instance.getCurrentUserService = new BaseSingleFetchService(restRoutes.usersMe);
-    instance.getCurrentUser = instance.getCurrentUserService.get;
-
-    instance.getAllUsersService = new BaseSingleFetchService(restRoutes.usersList);
-    instance.getAllUsers = instance.getAllUsersService.get;
+    const instance = {};
+    instance.getCurrentUser = new BaseSingleFetchService(restRoutes.usersMe).get;
+    instance.getAllUsers = new BaseSingleFetchService(restRoutes.usersList).get;
     return instance;
-}]
+}];
 
 
-export const ConferenceProcessService = ['restRoutes', function (restRoutes) {
-
+export const ConferenceService = ['restRoutes', function (restRoutes) {
+    const instance = {};
+    instance.list = new BaseJSONService(restRoutes.conferencesList).get;
+    instance.createConference = new BaseJSONService(restRoutes.startConference).post;
+    return instance;
 }];

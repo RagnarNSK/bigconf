@@ -1,7 +1,7 @@
 import {UsersListComponent, MyUserComponent} from './users.js';
 import {ConferenceListComponent} from "./conferenceList.js";
 import {ConfProcessComponent} from "./conferenceProcess.js";
-import {UserService} from "./services.js";
+import {ConferenceService, UserService} from "./services.js";
 
 $.getJSON(bigconfRestRoutes.settings).done(startApp);
 
@@ -27,6 +27,7 @@ function startApp(settings){
         module.constant("settings", settings);
         module.constant("eventBus", window);
         module.service("userService", UserService);
+        module.service("confService", ConferenceService);
         module.component("myUser", MyUserComponent);
         module.component("usersList", UsersListComponent);
         module.component("conferencesList", ConferenceListComponent);

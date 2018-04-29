@@ -16,9 +16,11 @@ public class ConferenceAffinityService {
     public static final String CACHE_NAME = "conferencesCache";
 
     private final IgniteAffinityServiceHelper<UUID,Conference> ish;
+    private final ConferenceProcessDataAffinityService conferenceProcessDataAffinityService;
 
     public ConferenceAffinityService(Ignite ignite) {
         this.ish = new IgniteAffinityServiceHelper<>(CACHE_NAME, ignite, UUID.class, Conference.class);
+        this.conferenceProcessDataAffinityService = new ConferenceProcessDataAffinityService(ignite);
     }
 
     public Conference getConference(UUID conferenceId) {
@@ -41,5 +43,6 @@ public class ConferenceAffinityService {
 
     public void delete(UUID conferenceId) {
         ish.getCache().remove(conferenceId);
+        conferenceProcessDataAffinityService.onConferenceDelete(conferenceId);
     }
 }

@@ -10,7 +10,7 @@ public class Conference {
     private final UUID id;
     private final int recordInterval;
     private final String createdBy;
-    private volatile boolean isActive = true;
+    private volatile boolean active = true;
 
     public Conference(String createdBy) {
         this(DEFAULT_RECORD_INTERVAL, createdBy);
