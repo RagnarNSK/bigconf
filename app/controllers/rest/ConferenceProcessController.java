@@ -61,7 +61,6 @@ public class ConferenceProcessController extends UserIdSupportController {
 
     private String mapConfUsers(ConferenceUsers confUsers) {
         List<ConfUsersDTO> dtoList = confUsers.getUsersData().stream()
-                .sorted()
                 .map(data -> new ConfUsersDTO(data.getUserId(),
                         booleanToInt(data.isMuted()),
                         booleanToInt(data.isSpeaking())))
@@ -78,6 +77,20 @@ public class ConferenceProcessController extends UserIdSupportController {
         return withConferenceId(confId -> userService.getUser(getUserId())
                 .thenComposeAsync(user -> conferenceService.stopConference(user, confId))
                 .thenApplyAsync((nothing) -> ok("Stopped")));
+    }
+
+    @Secure
+    public CompletionStage<Result> joinConference() {
+        return withConferenceId(confId -> userService.getUser(getUserId())
+                .thenComposeAsync(user -> conferenceService.joinToConference(confId, user))
+                .thenApplyAsync((conference) -> ok(Json.toJson(conference))));
+    }
+
+    @Secure
+    public CompletionStage<Result> leaveConference(){
+        return withConferenceId(confId -> userService.getUser(getUserId())
+                .thenComposeAsync(user -> conferenceService.leaveConference(confId, user))
+                .thenApplyAsync((conference) -> ok(Json.toJson(conference))));
     }
 
     private CompletionStage<Result> withConferenceId(Function<UUID, CompletionStage<Result>> command) {

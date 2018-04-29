@@ -1,4 +1,4 @@
-import {ConfStartedEvent, ConfStoppedEvent, ConfUsersInfo} from "./events.js";
+import {ConfLeftEvent, ConfStartedEvent, ConfStoppedEvent, ConfUsersInfo} from "./events.js";
 
 class BaseJSONService {
     constructor(url) {
@@ -164,10 +164,20 @@ export const ConferenceService = ['restRoutes', 'eventBus', function (restRoutes
         })
     };
 
+    instance.joinConference = async function(id) {
+        let conference = await new BaseJSONService(getUrlWithConfId(restRoutes.joinConference, id)).post();
+        bus.dispatchEvent(new ConfStartedEvent(conference));
+    };
+
+    instance.leaveConference = async function(id) {
+        let conference = await new BaseJSONService(getUrlWithConfId(restRoutes.leaveConference, id)).post();
+        bus.dispatchEvent(new ConfLeftEvent(conference));
+    };
+
     instance.selectConference = function (conference) {
         instance.conference = conference;
         bus.dispatchEvent(new ConfStartedEvent(conference));
-    }
+    };
 
     instance.getCurrentConferenceId = function () {
         if(!!instance.conference){

@@ -1,4 +1,4 @@
-import {confStoppedEvent} from "./events.js";
+import {confLeftEvent, confStoppedEvent} from "./events.js";
 
 /*
 class Conference {
@@ -19,7 +19,10 @@ export const ConferenceListComponent = {
                     <span ng-if="conf.joined">
                         <span>You are joined to this conf</span>
                         <span ng-if="!conf.active"><button ng-click="selectConf(conf)">Select</button></span>
-                     </span> 
+                    </span> 
+                    <span ng-if="!conf.joined">
+                        <button ng-click="joinConf(conf.id)">Join</button>
+                    </span>
                 </li>
             </ul>
 </div>
@@ -37,6 +40,9 @@ export const ConferenceListComponent = {
         $scope.selectConf = function (conference) {
             confService.selectConference(conference);
             refresh(false);
+        };
+        $scope.joinConf = function (id) {
+            confService.joinConference(id);
         };
 
         let refresh = async function (schedule) {
@@ -56,7 +62,6 @@ export const ConferenceListComponent = {
                 }, settings.conferenceListUpdateIntervalMs);
             }
         };
-        await refresh(true);
 
         bus.addEventListener(confStoppedEvent, function (event) {
             let conferenceId = event.getConferenceId();
@@ -64,7 +69,13 @@ export const ConferenceListComponent = {
                 return conferenceId === conf.id;
             });
             $scope.confs.splice(removedIndex,1);
-        })
+        });
+
+        bus.addEventListener(confLeftEvent, async function (event) {
+            await refresh(false);
+        });
+
+        await refresh(true);
     }]
 };
 

@@ -1,5 +1,6 @@
 export const confStartedEvent = "confStarted";
 export const confStoppedEvent = "confStopped";
+export const confLeftEvent = "confLeft";
 export const confUsersInfoEvent = "confUsers";
 
 export class ConfStartedEvent extends Event {
@@ -21,6 +22,15 @@ export class ConfStoppedEvent extends Event {
 
     getConferenceId() {
         return this.conferenceId;
+    }
+}
+export class ConfLeftEvent extends Event {
+    constructor(conference) {
+        super(confLeftEvent);
+        this.conference = conference;
+    }
+    getConference() {
+        return this.conference;
     }
 }
 
