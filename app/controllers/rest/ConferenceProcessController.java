@@ -50,11 +50,15 @@ public class ConferenceProcessController extends UserIdSupportController {
         Http.Response response = response();
         return withConferenceId((conferenceId) -> conferenceService.getForUser(conferenceId, getUserId())
                 .thenCombineAsync(conferenceService.getConferenceUsers(conferenceId), (bytes, confUsers) -> {
-                    response.setHeader("confUsers", mapConfUsers(confUsers));
-                    if (bytes != null) {
-                        return ok(new ByteBufferBackedInputStream(bytes));
+                    if(confUsers != null) {
+                        response.setHeader("confUsers", mapConfUsers(confUsers));
+                        if (bytes != null) {
+                            return ok(new ByteBufferBackedInputStream(bytes));
+                        } else {
+                            return status(204);
+                        }
                     } else {
-                        return status(204);
+                        return notFound();
                     }
                 }));
     }

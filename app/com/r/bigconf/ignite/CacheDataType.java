@@ -4,6 +4,9 @@ import org.apache.ignite.cache.CacheAtomicityMode;
 import org.apache.ignite.cache.CacheMode;
 import org.apache.ignite.configuration.CacheConfiguration;
 
+import javax.cache.expiry.CreatedExpiryPolicy;
+import javax.cache.expiry.Duration;
+
 public enum CacheDataType {
     USERS_DATA(Constants.PERSISTED){
         @Override
@@ -29,6 +32,7 @@ public enum CacheDataType {
             cfg.setCacheMode(CacheMode.PARTITIONED);
             cfg.setBackups(0);
             cfg.setDataRegionName(getRegionName());
+            cfg.setExpiryPolicyFactory(CreatedExpiryPolicy.factoryOf(Duration.ONE_MINUTE));
         }
     };
 

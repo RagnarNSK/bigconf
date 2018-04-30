@@ -16,10 +16,14 @@ public abstract class BaseConferenceService implements ConferenceService {
     }
 
     protected void addUser(ConferenceUsers users, String userId) {
-        users.getUsersData().add(new ConferenceUserInstantData(userId, true, false));
+        if(users != null) {
+            users.getUsersData().add(new ConferenceUserInstantData(userId, true, false));
+        }
     }
 
     protected void removeUser(ConferenceUsers users, String userId) {
-        users.getUsersData().removeIf(data->data.getUserId().equals(userId));
+        if(users != null) {
+            users.getUsersData().removeIf(data->data.getUserId().equals(userId));
+        }
     }
 }

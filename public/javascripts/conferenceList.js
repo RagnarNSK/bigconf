@@ -1,4 +1,4 @@
-import {confLeftEvent, confStoppedEvent} from "./events.js";
+import {confLeftEvent, confStartedEvent, confStoppedEvent} from "./events.js";
 
 /*
 class Conference {
@@ -32,14 +32,12 @@ export const ConferenceListComponent = {
 
         $scope.createConference = async function () {
             await confService.createConference();
-            refresh(false);
         };
         $scope.confClick = function (id) {
             console.log("Conf " + id + " clicked");
         };
         $scope.selectConf = function (conference) {
             confService.selectConference(conference);
-            refresh(false);
         };
         $scope.joinConf = function (id) {
             confService.joinConference(id);
@@ -63,6 +61,10 @@ export const ConferenceListComponent = {
             }
         };
 
+        let singleTimeRefresh = async function () {
+            await refresh(false);
+        };
+
         bus.addEventListener(confStoppedEvent, function (event) {
             let conferenceId = event.getConferenceId();
             let removedIndex = $scope.confs.findIndex((conf)=>{
@@ -71,9 +73,8 @@ export const ConferenceListComponent = {
             $scope.confs.splice(removedIndex,1);
         });
 
-        bus.addEventListener(confLeftEvent, async function (event) {
-            await refresh(false);
-        });
+        bus.addEventListener(confLeftEvent, singleTimeRefresh);
+        bus.addEventListener(confStartedEvent, singleTimeRefresh);
 
         await refresh(true);
     }]

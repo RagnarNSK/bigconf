@@ -81,12 +81,17 @@ export const ConferenceService = ['restRoutes', 'eventBus', function (restRoutes
     const instance = {};
     instance.conference = null;
     instance.list = new BaseJSONService(restRoutes.conferencesList).get;
-    instance.createConference = async function (){
-        let conference = await new BaseJSONService(restRoutes.startConference).post();
+
+
+    function onJoinConf(conference) {
         instance.conference = conference;
         bus.dispatchEvent(new ConfStartedEvent(conference));
-    };
+    }
 
+    instance.createConference = async function () {
+        let conference = await new BaseJSONService(restRoutes.startConference).post();
+        onJoinConf(conference);
+    };
 
     function getUrlWithConfId(url, confId) {
         return url + "?confId=" + confId;
@@ -98,20 +103,28 @@ export const ConferenceService = ['restRoutes', 'eventBus', function (restRoutes
         let request = new XMLHttpRequest();
         request.responseType = 'arraybuffer';
         request.onload = function () {
-            if (request.status === 200) {
-                const source = context.createBufferSource();
-                context.decodeAudioData(request.response, function (buffer) {
-                    source.buffer = buffer;
-                }, null);
-                source.connect(context.destination);
-                source.start(0);
+            if (request.status === 404) {
+                bus.dispatchEvent(new ConfLeftEvent(instance.conference));
+                instance.conference = null;
                 if (!!instance.promise) {
-                    instance.promise.resolve();
+                    instance.promise.reject();
                 }
-            }
-            let confUsersHeader = request.getResponseHeader("confUsers");
-            if (!!confUsersHeader) {
-                bus.dispatchEvent(new ConfUsersInfo(confUsersHeader));
+            } else {
+                if (request.status === 200) {
+                    const source = context.createBufferSource();
+                    context.decodeAudioData(request.response, function (buffer) {
+                        source.buffer = buffer;
+                    }, null);
+                    source.connect(context.destination);
+                    source.start(0);
+                    if (!!instance.promise) {
+                        instance.promise.resolve();
+                    }
+                }
+                let confUsersHeader = request.getResponseHeader("confUsers");
+                if (!!confUsersHeader) {
+                    bus.dispatchEvent(new ConfUsersInfo(confUsersHeader));
+                }
             }
         };
 
@@ -127,19 +140,23 @@ export const ConferenceService = ['restRoutes', 'eventBus', function (restRoutes
         };
 
         instance.getAndPlayConfSound = function () {
-            const confId = instance.conference.id;
-            request.open('GET', getUrlWithConfId(restRoutes.getConfSoundData, confId), true);
-            request.send();
+            if (!!instance.conference) {
+                const confId = instance.conference.id;
+                request.open('GET', getUrlWithConfId(restRoutes.getConfSoundData, confId), true);
+                request.send();
+            }
         };
         instance.uploadConfSound = function (file) {
-            const confId = instance.conference.id;
-            makeXMLHttpRequest(getUrlWithConfId(restRoutes.uploadConfSoundData, confId), file, function () {
-                console.log('Record uploaded');
-            });
+            if (!!instance.conference) {
+                const confId = instance.conference.id;
+                makeXMLHttpRequest(getUrlWithConfId(restRoutes.uploadConfSoundData, confId), file, function () {
+                    console.log('Record uploaded');
+                });
+            }
         };
     } catch (e) {
         alert("Web Audio API not supported");
-        instance.getAndPlayConfSound = function() {
+        instance.getAndPlayConfSound = function () {
             console.log("audio API not supported")
         };
         instance.uploadConfSound = function () {
@@ -156,7 +173,7 @@ export const ConferenceService = ['restRoutes', 'eventBus', function (restRoutes
                     bus.dispatchEvent(new ConfStoppedEvent(confId));
                     resolve();
                 })
-                .fail(()=>{
+                .fail(() => {
                     //TODO check if needed to reset conference
                     //instance.conference = null;
                     reject();
@@ -164,14 +181,16 @@ export const ConferenceService = ['restRoutes', 'eventBus', function (restRoutes
         })
     };
 
-    instance.joinConference = async function(id) {
+    instance.joinConference = async function (id) {
         let conference = await new BaseJSONService(getUrlWithConfId(restRoutes.joinConference, id)).post();
-        bus.dispatchEvent(new ConfStartedEvent(conference));
+        onJoinConf(conference);
     };
 
-    instance.leaveConference = async function(id) {
-        let conference = await new BaseJSONService(getUrlWithConfId(restRoutes.leaveConference, id)).post();
-        bus.dispatchEvent(new ConfLeftEvent(conference));
+    instance.leaveConference = async function () {
+        if (!!instance.conference) {
+            let conference = await new BaseJSONService(getUrlWithConfId(restRoutes.leaveConference, instance.conference.id)).post();
+            bus.dispatchEvent(new ConfLeftEvent(conference));
+        }
     };
 
     instance.selectConference = function (conference) {
@@ -180,7 +199,7 @@ export const ConferenceService = ['restRoutes', 'eventBus', function (restRoutes
     };
 
     instance.getCurrentConferenceId = function () {
-        if(!!instance.conference){
+        if (!!instance.conference) {
             return instance.conference.id;
         } else {
             return null;

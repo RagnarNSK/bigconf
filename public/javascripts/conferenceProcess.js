@@ -1,12 +1,12 @@
-import {confStartedEvent, confUsersInfoEvent} from "./events.js";
+import {confLeftEvent, confStartedEvent, confStoppedEvent, confUsersInfoEvent} from "./events.js";
 
 export const ConfProcessComponent = {
     template: `
         <div class="confProcessBlock" >
             <div ng-if="confEnabled">
                 <div class="controls">
-                    <button class="muteButton" ng-click="toggleMuted()">{{recording?'Mute':'Unmute'}}</button>
-                    
+                    <button class="muteButton" ng-click="toggleMuted()">{{recording?'Mute':'Unmute'}}</button>                    
+                    <button class="leaveButton" ng-click="leaveConf()" ng-if="currentUser.id!=conferenceMaster">Leave</button> 
                     <button class="stopButton" ng-click="stopConf()" ng-if="currentUser.id==conferenceMaster">Stop</button>  
                 </div>        
                 <ul><li ng-repeat="user in users" ng-click="confUserClick(user.id)">{{user.name}}, muted={{user.muted}}, speaking={{user.speaking}}</li></ul>
@@ -72,11 +72,11 @@ export const ConfProcessComponent = {
         };
 
         $scope.stopConf = function () {
-            $scope.confEnabled = false;
-            confProcessService.stopConference().then(()=>{
-                $scope.reset();
-                $scope.$applyAsync();
-            });
+            confProcessService.stopConference();
+        };
+
+        $scope.leaveConf = function() {
+            confProcessService.leaveConference();
         };
 
         $scope.toggleMuted = function () {
@@ -100,8 +100,6 @@ export const ConfProcessComponent = {
         $scope.startConf = function () {
             $scope.confEnabled = true;
             confLoop();
-            $scope.$applyAsync();
-
         };
 
 
@@ -119,7 +117,15 @@ export const ConfProcessComponent = {
                 $scope.startConf();
             }
             $scope.$applyAsync();
-        })
+        });
+        bus.addEventListener(confLeftEvent, function (event) {
+            $scope.reset();
+            $scope.$applyAsync();
+        });
+        bus.addEventListener(confStoppedEvent, function (event) {
+            $scope.reset();
+            $scope.$applyAsync();
+        });
     }]
 };
 
