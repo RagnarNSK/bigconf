@@ -43,7 +43,7 @@ export const ConferenceListComponent = {
             confService.joinConference(id);
         };
 
-        let refresh = async function (schedule) {
+        let refresh = async function () {
             let currentUser = await userService.getCurrentUser();
             let currentConferenceId = confService.getCurrentConferenceId();
             $scope.confs = await confService.list();
@@ -53,16 +53,7 @@ export const ConferenceListComponent = {
                     conf.active = currentConferenceId === conf.id;
                 }
             });
-            $scope.$applyAsync();
-            if (schedule) {
-                setTimeout(async function () {
-                    await refresh(true)
-                }, settings.conferenceListUpdateIntervalMs);
-            }
-        };
-
-        let singleTimeRefresh = async function () {
-            await refresh(false);
+            $scope.$apply();
         };
 
         bus.addEventListener(confStoppedEvent, function (event) {
@@ -73,10 +64,11 @@ export const ConferenceListComponent = {
             $scope.confs.splice(removedIndex,1);
         });
 
-        bus.addEventListener(confLeftEvent, singleTimeRefresh);
-        bus.addEventListener(confStartedEvent, singleTimeRefresh);
+        bus.addEventListener(confLeftEvent, refresh);
+        bus.addEventListener(confStartedEvent, refresh);
 
-        await refresh(true);
+
+        setInterval(refresh, settings.conferenceListUpdateIntervalMs);
     }]
 };
 

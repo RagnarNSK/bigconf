@@ -25,6 +25,7 @@ export const ConfProcessComponent = {
         $scope.confEnabled = false;
         $scope.conferenceId = null;
         $scope.recording = false;
+        $scope.getSoundInterval = null;
 
         $scope.confUserClick = function (confUserId) {
             console.log("Conf user " + confUserId + " clicked");
@@ -61,6 +62,9 @@ export const ConfProcessComponent = {
             $scope.confEnabled = false;
             $scope.recording = false;
             $scope.interval = settings.defaultRecordIntervalMs;
+            if(!!$scope.getSoundInterval) {
+                clearInterval($scope.getSoundInterval);
+            }
         };
 
         $scope.startRecord = function () {
@@ -88,18 +92,16 @@ export const ConfProcessComponent = {
             $scope.recording = !$scope.recording;
         };
 
-        function confLoop() {
-            setTimeout(function () {
-                if ($scope.confEnabled) {
-                    confProcessService.getAndPlayConfSound();
-                    confLoop();
-                }
-            }, $scope.interval);
-        }
 
         $scope.startConf = function () {
             $scope.confEnabled = true;
-            confLoop();
+            $scope.getSoundInterval = setInterval(function () {
+                if ($scope.confEnabled) {
+                    confProcessService.getAndPlayConfSound();
+                } else {
+                    console.log("Warning! Conference loop executing while conf disabled");
+                }
+            }, $scope.interval);
         };
 
 
