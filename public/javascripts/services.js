@@ -112,9 +112,9 @@ export const ConferenceService = ['restRoutes', 'eventBus', function (restRoutes
             } else {
                 if (request.status === 200) {
                     const source = context.createBufferSource();
-                    context.decodeAudioData(request.response, function (buffer) {
+                    context.decodeAudioData(request.response, buffer => {
                         source.buffer = buffer;
-                    }, null);
+                    }, (e)=>{console.log("Decode error: " + e)});
                     source.connect(context.destination);
                     source.start(0);
                     if (!!instance.promise) {
