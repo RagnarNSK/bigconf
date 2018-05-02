@@ -7,6 +7,9 @@ import com.r.bigconf.core.model.ConferenceUserInstantData;
 import com.r.bigconf.core.model.ConferenceUsers;
 import com.r.bigconf.core.model.User;
 
+import java.nio.ByteBuffer;
+import java.util.UUID;
+
 public abstract class BaseConferenceService implements ConferenceService {
 
     public static final Filter FILTER = new DummyWavFilter();
@@ -25,5 +28,9 @@ public abstract class BaseConferenceService implements ConferenceService {
         if(users != null) {
             users.getUsersData().removeIf(data->data.getUserId().equals(userId));
         }
+    }
+
+    protected ByteBuffer processIncomingUserData(UUID conferenceId, String userId, ByteBuffer soundData) {
+        return FILTER.filter(soundData);
     }
 }

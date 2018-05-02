@@ -3,19 +3,20 @@ package controllers.rest;
 import com.r.bigconf.core.model.User;
 import com.r.bigconf.core.service.UserService;
 import controllers.UserIdSupportController;
+import org.pac4j.play.store.PlaySessionStore;
 import play.libs.Json;
 import play.mvc.Result;
 
 import javax.inject.Inject;
 import java.util.concurrent.CompletionStage;
-import java.util.function.Function;
 
 public class UserController extends UserIdSupportController {
 
     private final UserService userService;
 
     @Inject
-    public UserController(UserService userService) {
+    public UserController(UserService userService, PlaySessionStore playSessionStore) {
+        super(playSessionStore, userService);
         this.userService = userService;
     }
 

@@ -14,7 +14,6 @@ import org.apache.ignite.cache.query.ScanQuery;
 import org.apache.ignite.lang.IgniteCallable;
 import org.apache.ignite.resources.IgniteInstanceResource;
 
-import javax.cache.Cache;
 import javax.inject.Inject;
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -54,7 +53,7 @@ public class IgniteConferenceService extends BaseConferenceService {
 
     @Override
     public CompletableFuture<?> stopConference(User user, UUID conferenceId) {
-        return toCF(ish.getCache().invokeAsync(conferenceId, (CacheEntryProcessor<UUID, Conference, Object>)(entry, args)->{
+        return toCF(ish.getCache().invokeAsync(conferenceId, (CacheEntryProcessor<UUID, Conference, Object>) (entry, args) -> {
             if (entry.exists()) {
                 Conference conference = entry.getValue();
                 if (conference.getCreatedBy().equals(args[0])) {
@@ -106,24 +105,25 @@ public class IgniteConferenceService extends BaseConferenceService {
     @Override
     public CompletableFuture<?> addIncoming(UUID conferenceId, String userId, ByteBuffer byteBuffer) {
         String key = ConferenceProcessDataAffinityService.getIncomingSoundKey(conferenceId, userId);
-        return toCF(soundISH.getCache().putAsync(key, byteBuffer));
+        return toCF(soundISH.getCache().putAsync(key, processIncomingUserData(conferenceId, userId, byteBuffer)));
     }
 
 
     @Override
     public CompletableFuture<List<ConferenceDTO>> listAvailableConferences(User user) {
-        //TODO filter conferences
-        QueryCursor<ConferenceDTO> cursor = ish.getCache().query(new ScanQuery<>(),(entry)->{
-            Conference conf = (Conference) entry.getValue();
-            ConferenceUsers users = confUsersISH.getCache().get(conf.getId());
-            return new ConferenceDTO(conf.getId(),
-                    conf.getCreatedBy(),
-                    conf.getRecordInterval(),
-                    users.getUsersData().stream()
-                            .map(ConferenceUserInstantData::getUserId)
-                            .collect(Collectors.toSet()));
-        });
-        return toCF(cursor.iterator(), v->v);
+        QueryCursor<ConferenceDTO> cursor = ish.getCache().query(
+                new ScanQuery<UUID,Conference>((key, value) -> value.isActive()),
+                (entry) -> {
+                    Conference conf = entry.getValue();
+                    ConferenceUsers users = confUsersISH.getCache().get(conf.getId());
+                    return new ConferenceDTO(conf.getId(),
+                            conf.getCreatedBy(),
+                            conf.getRecordInterval(),
+                            users.getUsersData().stream()
+                                    .map(ConferenceUserInstantData::getUserId)
+                                    .collect(Collectors.toSet()));
+                });
+        return toCF(cursor.iterator(), v -> v);
     }
 
     @Override

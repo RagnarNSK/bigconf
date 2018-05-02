@@ -22,13 +22,9 @@ import static com.r.bigconf.core.model.Conference.DEFAULT_RECORD_INTERVAL;
 @Slf4j
 public class HomeController extends UserIdSupportController {
 
-    private final UserService userService;
-    private final PlaySessionStore playSessionStore;
-
     @Inject
     public HomeController(UserService userService, PlaySessionStore playSessionStore) {
-        this.userService = userService;
-        this.playSessionStore = playSessionStore;
+        super(playSessionStore, userService);
     }
 
     @Secure
@@ -37,18 +33,6 @@ public class HomeController extends UserIdSupportController {
             registerAuthenticatedUser();
         }
         return ok(views.html.index.render());
-    }
-
-    private void registerAuthenticatedUser() {
-        PlayWebContext webContext = new PlayWebContext(ctx(), playSessionStore);
-        ProfileManager<CommonProfile> profileManager = new ProfileManager<>(webContext);
-        Optional<CommonProfile> profile = profileManager.get(true);
-        if (profile.isPresent()) {
-            CommonProfile commonProfile = profile.get();
-            String userId = commonProfile.getId();
-            userService.registerUser(new User(userId, commonProfile.getUsername()));
-            session().put(USER_ID_KEY, userId);
-        }
     }
 
 

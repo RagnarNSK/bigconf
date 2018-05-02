@@ -9,6 +9,7 @@ import controllers.UserIdSupportController;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.pac4j.play.java.Secure;
+import org.pac4j.play.store.PlaySessionStore;
 import play.libs.Json;
 import play.mvc.Http;
 import play.mvc.Result;
@@ -28,7 +29,8 @@ public class ConferenceProcessController extends UserIdSupportController {
     private final ConferenceService conferenceService;
 
     @Inject
-    public ConferenceProcessController(UserService userService, ConferenceService conferenceService) {
+    public ConferenceProcessController(UserService userService, ConferenceService conferenceService, PlaySessionStore playSessionStore) {
+        super(playSessionStore, userService);
         this.userService = userService;
         this.conferenceService = conferenceService;
     }

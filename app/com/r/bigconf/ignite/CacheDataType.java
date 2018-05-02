@@ -33,6 +33,7 @@ public enum CacheDataType {
             cfg.setBackups(0);
             cfg.setDataRegionName(getRegionName());
             cfg.setExpiryPolicyFactory(CreatedExpiryPolicy.factoryOf(Duration.ONE_MINUTE));
+            cfg.setEagerTtl(true);
         }
     };
 
